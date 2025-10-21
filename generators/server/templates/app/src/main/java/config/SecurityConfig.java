@@ -31,11 +31,21 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import <%= packageName %>.config.security.JwtAuthenticationEntryPoint;
 import <%= packageName %>.config.security.JwtAuthenticationFilter;
+import <%= packageName %>.config.security.CustomUserDetailsService;
+import <%= packageName %>.repositories.UserRepository;
 <%_ } _%>
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+<%_ if (authenticationType === 'jwt') { _%>
+    private final UserRepository userRepository;
+
+    public SecurityConfig(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+<%_ } _%>
 
 <%_ if (authenticationType === 'oauth2-resource' || authenticationType === 'sso') { _%>
     @Bean
@@ -120,11 +130,7 @@ public class SecurityConfig {
 
     @Bean
     public UserDetailsService userDetailsService() {
-        // This should be implemented based on your user storage mechanism
-        return username -> {
-            // Implement user loading logic
-            throw new UnsupportedOperationException("UserDetailsService implementation required");
-        };
+        return new CustomUserDetailsService(userRepository);
     }
 
     @Bean

@@ -205,9 +205,13 @@ module.exports = class extends BaseGenerator {
                 mainJavaTemplates.push('config/security/JwtTokenProvider.java');
                 mainJavaTemplates.push('config/security/JwtAuthenticationFilter.java');
                 mainJavaTemplates.push('config/security/JwtAuthenticationEntryPoint.java');
+                mainJavaTemplates.push('config/security/CustomUserDetailsService.java');
                 mainJavaTemplates.push('web/controllers/AuthController.java');
                 mainJavaTemplates.push('model/request/LoginRequest.java');
                 mainJavaTemplates.push('model/response/JwtAuthenticationResponse.java');
+                mainJavaTemplates.push('model/entity/User.java');
+                mainJavaTemplates.push('repositories/UserRepository.java');
+                mainJavaTemplates.push('config/UserInitializer.java');
             }
         }
         this.generateMainJavaCode(configOptions, mainJavaTemplates);
