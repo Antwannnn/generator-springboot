@@ -1,0 +1,92 @@
+spring:
+  application:
+    name: <%= appName %>
+  profiles:
+    active: local
+<%_ if (authenticationType !== 'none') { _%>
+  security:
+<%_ if (authenticationType === 'oauth2') { _%>
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI:<%= oauth2IssuerUri %>}
+<%_ } _%>
+<%_ if (authenticationType === 'sso') { _%>
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${SSO_ISSUER_URI:<%= ssoIssuerUri %>}
+<%_ } _%>
+<%_ } _%>
+  jpa:
+    show-sql: false
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+      jdbc:
+        time_zone: UTC
+        batch_size: 25
+      order_inserts: true
+      order_updates: true
+    properties:
+      hibernate:
+        format_sql: false
+        generate_statistics: false
+        query:
+          fail_on_pagination_over_collection_fetch: true
+          in_clause_parameter_padding: true
+          plan_cache_max_size: 4096
+        connection:
+          provider_disables_autocommit: true
+        jdbc:
+          lob:
+            non_contextual_creation: true
+  datasource:
+    hikari:
+      auto-commit: false
+      data-source-properties:
+        ApplicationName: ${spring.application.name}
+  data:
+    jpa:
+      repositories:
+        bootstrap-mode: deferred
+<%_ if (dbMigrationTool === 'flywaydb') { _%>
+  flyway:
+    locations: classpath:/db/migration/{vendor}
+<%_ } _%>
+
+server:
+  port: 8080
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: configprops,env,health,info,logfile,loggers,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+<%_ if (authenticationType === 'jwt') { _%>
+# JWT Configuration
+app:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:mySecretKey}
+      expiration: ${JWT_EXPIRATION:86400000}
+<%_ } _%>
+
+<%_ if (authenticationType === 'basic') { _%>
+# Basic Authentication
+app:
+  security:
+    basic:
+      enabled: true
+<%_ } _%>
+
+<%_ if (features.includes('elk')) { _%>
+# ELK Configuration
+application:
+  logstash-host: localhost
+<%_ } _%>

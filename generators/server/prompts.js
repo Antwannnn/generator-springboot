@@ -106,6 +106,55 @@ async function prompting() {
         },
         {
             type: 'list',
+            name: 'authenticationType',
+            message: 'Which type of authentication do you want to implement?',
+            choices: [
+                {
+                    value: 'none',
+                    name: 'None (No authentication)'
+                },
+                {
+                    value: 'oauth2',
+                    name: 'OAuth2 (Resource Server)'
+                },
+                {
+                    value: 'sso',
+                    name: 'SSO (Single Sign-On)'
+                },
+                {
+                    value: 'jwt',
+                    name: 'JWT (JSON Web Tokens)'
+                },
+                {
+                    value: 'basic',
+                    name: 'Basic Authentication'
+                }
+            ],
+            default: 'none'
+        },
+        {
+            when: (answers) => answers.authenticationType === 'oauth2',
+            type: 'string',
+            name: 'oauth2IssuerUri',
+            message: 'OAuth2 Issuer URI (e.g., https://your-auth-server.com)',
+            default: 'https://your-auth-server.com'
+        },
+        {
+            when: (answers) => answers.authenticationType === 'sso',
+            type: 'string',
+            name: 'ssoProvider',
+            message: 'SSO Provider (e.g., keycloak, okta, azure)',
+            default: 'keycloak'
+        },
+        {
+            when: (answers) => answers.authenticationType === 'sso',
+            type: 'string',
+            name: 'ssoIssuerUri',
+            message: 'SSO Issuer URI',
+            default: 'http://localhost:8080/realms/master'
+        },
+        {
+            type: 'list',
             name: 'buildTool',
             message: 'Which build tool do you want to use?',
             choices: [

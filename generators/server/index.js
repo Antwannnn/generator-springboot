@@ -196,10 +196,25 @@ module.exports = class extends BaseGenerator {
             'model/response/PagedResult.java',
             'utils/AppConstants.java'
         ];
+        
+        // Add authentication-related templates
+        if (configOptions.authenticationType !== 'none') {
+            mainJavaTemplates.push('config/SecurityConfig.java');
+            
+            if (configOptions.authenticationType === 'jwt') {
+                mainJavaTemplates.push('config/security/JwtTokenProvider.java');
+                mainJavaTemplates.push('config/security/JwtAuthenticationFilter.java');
+                mainJavaTemplates.push('config/security/JwtAuthenticationEntryPoint.java');
+                mainJavaTemplates.push('web/controllers/AuthController.java');
+                mainJavaTemplates.push('model/request/LoginRequest.java');
+                mainJavaTemplates.push('model/response/JwtAuthenticationResponse.java');
+            }
+        }
         this.generateMainJavaCode(configOptions, mainJavaTemplates);
 
         const mainResTemplates = [
             'application.properties',
+            'application.yml',
             'application-local.properties',
             'logback-spring.xml'
         ];
@@ -214,6 +229,12 @@ module.exports = class extends BaseGenerator {
         ];
         if(configOptions.features.includes("localstack")) {
             testJavaTemplates.push('SqsListenerIntegrationTest.java');
+        }
+        
+        // Add authentication test templates
+        if (configOptions.authenticationType === 'jwt') {
+            testJavaTemplates.push('web/controllers/AuthControllerTest.java');
+            testJavaTemplates.push('config/security/JwtTokenProviderTest.java');
         }
         this.generateTestJavaCode(configOptions, testJavaTemplates);
 

@@ -30,6 +30,9 @@
         <%_ } _%>
         <springdoc-openapi.version><%= SPRINGDOC_OPENAPI_VERSION %></springdoc-openapi.version>
         <commons-io.version><%= COMMONS_IO_VERSION %></commons-io.version>
+        <%_ if (authenticationType === 'jwt') { _%>
+        <jjwt.version><%= JJWT_VERSION %></jjwt.version>
+        <%_ } _%>
 
         <project.testresult.directory>${project.build.directory}/test-results</project.testresult.directory>
         <spotless.version><%= MAVEN_SPOTLESS_PLUGIN_VERSION %></spotless.version>
@@ -160,6 +163,40 @@
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <%_ } _%>
+        <%_ if (authenticationType !== 'none') { _%>
+        <!-- Spring Security -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <%_ } _%>
+        <%_ if (authenticationType === 'oauth2' || authenticationType === 'sso') { _%>
+        <!-- OAuth2 Resource Server -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <%_ } _%>
+        <%_ if (authenticationType === 'jwt') { _%>
+        <!-- JWT -->
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-api</artifactId>
+            <version>${jjwt.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-impl</artifactId>
+            <version>${jjwt.version}</version>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jsonwebtoken</groupId>
+            <artifactId>jjwt-jackson</artifactId>
+            <version>${jjwt.version}</version>
             <scope>runtime</scope>
         </dependency>
         <%_ } _%>
