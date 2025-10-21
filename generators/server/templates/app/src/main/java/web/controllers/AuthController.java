@@ -1,6 +1,6 @@
 package <%= packageName %>.web.controllers;
 
-<%_ if (authenticationType === 'jwt') { _%>
+<%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;

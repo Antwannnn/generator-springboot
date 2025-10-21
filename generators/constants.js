@@ -18,7 +18,7 @@ module.exports = {
     // Authentication versions
     SPRING_SECURITY_VERSION: '6.4.2',
     SPRING_SECURITY_OAUTH2_VERSION: '1.1.2',
-    JJWT_VERSION: '0.12.6',
+    NIMBUS_JOSE_JWT_VERSION: '9.37.3',
 
     JACOCO_MIN_COVERAGE_REQUIRED: '0.80',
 

@@ -1,6 +1,6 @@
 package <%= packageName %>.config.security;
 
-<%_ if (authenticationType === 'jwt') { _%>
+<%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;

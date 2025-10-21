@@ -1,6 +1,6 @@
 package <%= packageName %>.model.response;
 
-<%_ if (authenticationType === 'jwt') { _%>
+<%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
 public class JwtAuthenticationResponse {
     
     private String accessToken;

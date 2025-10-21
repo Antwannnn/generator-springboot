@@ -1,6 +1,6 @@
 package <%= packageName %>.model.request;
 
-<%_ if (authenticationType === 'jwt') { _%>
+<%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
 import jakarta.validation.constraints.NotBlank;
 
 public class LoginRequest {

@@ -105,14 +105,10 @@ async function prompting() {
             ]
         },
         {
-            type: 'list',
-            name: 'authenticationType',
-            message: 'Which type of authentication do you want to implement?',
+            type: 'checkbox',
+            name: 'authenticationTypes',
+            message: 'Which authentication methods do you want to implement? (You can select multiple)',
             choices: [
-                {
-                    value: 'none',
-                    name: 'None (No authentication)'
-                },
                 {
                     value: 'oauth2-resource',
                     name: 'OAuth2 Resource Server (JWT validation)'
@@ -134,17 +130,17 @@ async function prompting() {
                     name: 'Basic Authentication'
                 }
             ],
-            default: 'none'
+            default: []
         },
         {
-            when: (answers) => answers.authenticationType === 'oauth2-resource',
+            when: (answers) => answers.authenticationTypes.includes('oauth2-resource'),
             type: 'string',
             name: 'oauth2IssuerUri',
             message: 'OAuth2 Issuer URI (e.g., https://your-auth-server.com)',
             default: 'https://your-auth-server.com'
         },
         {
-            when: (answers) => answers.authenticationType === 'oauth2-client',
+            when: (answers) => answers.authenticationTypes.includes('oauth2-client'),
             type: 'checkbox',
             name: 'oauth2Providers',
             message: 'Which OAuth2 providers do you want to support?',
@@ -169,14 +165,14 @@ async function prompting() {
             default: ['google']
         },
         {
-            when: (answers) => answers.authenticationType === 'sso',
+            when: (answers) => answers.authenticationTypes.includes('sso'),
             type: 'string',
             name: 'ssoProvider',
             message: 'SSO Provider (e.g., keycloak, okta, azure)',
             default: 'keycloak'
         },
         {
-            when: (answers) => answers.authenticationType === 'sso',
+            when: (answers) => answers.authenticationTypes.includes('sso'),
             type: 'string',
             name: 'ssoIssuerUri',
             message: 'SSO Issuer URI',

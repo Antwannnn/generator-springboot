@@ -30,8 +30,8 @@
         <%_ } _%>
         <springdoc-openapi.version><%= SPRINGDOC_OPENAPI_VERSION %></springdoc-openapi.version>
         <commons-io.version><%= COMMONS_IO_VERSION %></commons-io.version>
-        <%_ if (authenticationType === 'jwt') { _%>
-        <jjwt.version><%= JJWT_VERSION %></jjwt.version>
+        <%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
+        <nimbus-jose-jwt.version><%= NIMBUS_JOSE_JWT_VERSION %></nimbus-jose-jwt.version>
         <%_ } _%>
 
         <project.testresult.directory>${project.build.directory}/test-results</project.testresult.directory>
@@ -166,45 +166,33 @@
             <scope>runtime</scope>
         </dependency>
         <%_ } _%>
-        <%_ if (authenticationType !== 'none') { _%>
+        <%_ if (authenticationTypes && authenticationTypes.length > 0) { _%>
         <!-- Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <%_ } _%>
-        <%_ if (authenticationType === 'oauth2-resource' || authenticationType === 'sso') { _%>
+        <%_ if (authenticationTypes && (authenticationTypes.includes('oauth2-resource') || authenticationTypes.includes('sso'))) { _%>
         <!-- OAuth2 Resource Server -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
         <%_ } _%>
-        <%_ if (authenticationType === 'oauth2-client') { _%>
+        <%_ if (authenticationTypes && authenticationTypes.includes('oauth2-client')) { _%>
         <!-- OAuth2 Client -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
         <%_ } _%>
-        <%_ if (authenticationType === 'jwt') { _%>
-        <!-- JWT -->
+        <%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
+        <!-- JWT with NimbusDS -->
         <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-            <version>${jjwt.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <version>${jjwt.version}</version>
-            <scope>runtime</scope>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+            <version>${nimbus-jose-jwt.version}</version>
         </dependency>
         <%_ } _%>
 

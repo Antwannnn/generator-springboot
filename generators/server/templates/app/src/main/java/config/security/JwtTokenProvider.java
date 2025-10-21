@@ -1,13 +1,20 @@
 package <%= packageName %>.config.security;
 
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
+import com.nimbusds.jose.JOSEException;
+import com.nimbusds.jose.JWSAlgorithm;
+import com.nimbusds.jose.JWSHeader;
+import com.nimbusds.jose.JWSSigner;
+import com.nimbusds.jose.JWSVerifier;
+import com.nimbusds.jose.crypto.MACSigner;
+import com.nimbusds.jose.crypto.MACVerifier;
+import com.nimbusds.jwt.JWTClaimsSet;
+import com.nimbusds.jwt.SignedJWT;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import javax.crypto.SecretKey;
+import java.text.ParseException;
 import java.util.Date;
 
 @Component
@@ -19,50 +26,54 @@ public class JwtTokenProvider {
     @Value("${app.security.jwt.expiration}")
     private int jwtExpirationInMs;
 
-    private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(jwtSecret.getBytes());
-    }
-
     public String generateToken(Authentication authentication) {
-        UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
-        Date expiryDate = new Date(System.currentTimeMillis() + jwtExpirationInMs);
+        try {
+            UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
+            Date expiryDate = new Date(System.currentTimeMillis() + jwtExpirationInMs);
 
-        return Jwts.builder()
-                .setSubject(userPrincipal.getUsername())
-                .setIssuedAt(new Date())
-                .setExpiration(expiryDate)
-                .signWith(getSigningKey())
-                .compact();
+            // Create JWT claims
+            JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
+                    .subject(userPrincipal.getUsername())
+                    .issuer("your-app")
+                    .audience("your-app")
+                    .issueTime(new Date())
+                    .expirationTime(expiryDate)
+                    .claim("authorities", userPrincipal.getAuthorities())
+                    .build();
+
+            // Create signed JWT
+            SignedJWT signedJWT = new SignedJWT(
+                    new JWSHeader(JWSAlgorithm.HS256),
+                    claimsSet
+            );
+
+            // Sign the JWT
+            JWSSigner signer = new MACSigner(jwtSecret);
+            signedJWT.sign(signer);
+
+            return signedJWT.serialize();
+        } catch (JOSEException e) {
+            throw new RuntimeException("Error generating JWT token", e);
+        }
     }
 
     public String getUsernameFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
-
-        return claims.getSubject();
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            JWTClaimsSet claimsSet = signedJWT.getJWTClaimsSet();
+            return claimsSet.getSubject();
+        } catch (ParseException e) {
+            throw new RuntimeException("Error parsing JWT token", e);
+        }
     }
 
     public boolean validateToken(String authToken) {
         try {
-            Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(authToken);
-            return true;
-        } catch (SecurityException ex) {
-            // Invalid JWT signature
-        } catch (MalformedJwtException ex) {
-            // Invalid JWT token
-        } catch (ExpiredJwtException ex) {
-            // Expired JWT token
-        } catch (UnsupportedJwtException ex) {
-            // Unsupported JWT token
-        } catch (IllegalArgumentException ex) {
-            // JWT claims string is empty
+            SignedJWT signedJWT = SignedJWT.parse(authToken);
+            JWSVerifier verifier = new MACVerifier(jwtSecret);
+            return signedJWT.verify(verifier);
+        } catch (Exception e) {
+            return false;
         }
-        return false;
     }
 }

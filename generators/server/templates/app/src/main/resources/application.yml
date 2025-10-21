@@ -3,15 +3,15 @@ spring:
     name: <%= appName %>
   profiles:
     active: local
-<%_ if (authenticationType !== 'none') { _%>
+<%_ if (authenticationTypes && authenticationTypes.length > 0) { _%>
   security:
-<%_ if (authenticationType === 'oauth2-resource') { _%>
+<%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${OAUTH2_ISSUER_URI:<%= oauth2IssuerUri %>}
 <%_ } _%>
-<%_ if (authenticationType === 'oauth2-client') { _%>
+<%_ if (authenticationTypes.includes('oauth2-client')) { _%>
     oauth2:
       client:
         registration:
@@ -65,7 +65,7 @@ spring:
             issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/master}
 <%_ } _%>
 <%_ } _%>
-<%_ if (authenticationType === 'sso') { _%>
+<%_ if (authenticationTypes.includes('sso')) { _%>
     oauth2:
       resourceserver:
         jwt:
@@ -125,7 +125,7 @@ management:
     health:
       show-details: always
 
-<%_ if (authenticationType === 'jwt') { _%>
+<%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
 # JWT Configuration
 app:
   security:
@@ -134,7 +134,7 @@ app:
       expiration: ${JWT_EXPIRATION:86400000}
 <%_ } _%>
 
-<%_ if (authenticationType === 'basic') { _%>
+<%_ if (authenticationTypes && authenticationTypes.includes('basic')) { _%>
 # Basic Authentication
 app:
   security:

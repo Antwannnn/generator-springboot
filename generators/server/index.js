@@ -198,10 +198,10 @@ module.exports = class extends BaseGenerator {
         ];
         
         // Add authentication-related templates
-        if (configOptions.authenticationType !== 'none') {
+        if (configOptions.authenticationTypes && configOptions.authenticationTypes.length > 0) {
             mainJavaTemplates.push('config/SecurityConfig.java');
             
-            if (configOptions.authenticationType === 'jwt') {
+            if (configOptions.authenticationTypes.includes('jwt')) {
                 mainJavaTemplates.push('config/security/JwtTokenProvider.java');
                 mainJavaTemplates.push('config/security/JwtAuthenticationFilter.java');
                 mainJavaTemplates.push('config/security/JwtAuthenticationEntryPoint.java');
@@ -236,7 +236,7 @@ module.exports = class extends BaseGenerator {
         }
         
         // Add authentication test templates
-        if (configOptions.authenticationType === 'jwt') {
+        if (configOptions.authenticationTypes && configOptions.authenticationTypes.includes('jwt')) {
             testJavaTemplates.push('web/controllers/AuthControllerTest.java');
             testJavaTemplates.push('config/security/JwtTokenProviderTest.java');
         }
