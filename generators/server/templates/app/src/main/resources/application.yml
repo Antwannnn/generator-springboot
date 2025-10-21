@@ -5,11 +5,65 @@ spring:
     active: local
 <%_ if (authenticationType !== 'none') { _%>
   security:
-<%_ if (authenticationType === 'oauth2') { _%>
+<%_ if (authenticationType === 'oauth2-resource') { _%>
     oauth2:
       resourceserver:
         jwt:
           issuer-uri: ${OAUTH2_ISSUER_URI:<%= oauth2IssuerUri %>}
+<%_ } _%>
+<%_ if (authenticationType === 'oauth2-client') { _%>
+    oauth2:
+      client:
+        registration:
+<%_ if (oauth2Providers.includes('google')) { _%>
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:your-google-client-id}
+            client-secret: ${GOOGLE_CLIENT_SECRET:your-google-client-secret}
+            scope: openid,profile,email
+<%_ } _%>
+<%_ if (oauth2Providers.includes('github')) { _%>
+          github:
+            client-id: ${GITHUB_CLIENT_ID:your-github-client-id}
+            client-secret: ${GITHUB_CLIENT_SECRET:your-github-client-secret}
+            scope: user:email
+<%_ } _%>
+<%_ if (oauth2Providers.includes('microsoft')) { _%>
+          microsoft:
+            client-id: ${MICROSOFT_CLIENT_ID:your-microsoft-client-id}
+            client-secret: ${MICROSOFT_CLIENT_SECRET:your-microsoft-client-secret}
+            scope: openid,profile,email
+<%_ } _%>
+<%_ if (oauth2Providers.includes('keycloak')) { _%>
+          keycloak:
+            client-id: ${KEYCLOAK_CLIENT_ID:your-keycloak-client-id}
+            client-secret: ${KEYCLOAK_CLIENT_SECRET:your-keycloak-client-secret}
+            scope: openid,profile,email
+<%_ } _%>
+        provider:
+<%_ if (oauth2Providers.includes('google')) { _%>
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v2/userinfo
+            user-name-attribute: id
+<%_ } _%>
+<%_ if (oauth2Providers.includes('github')) { _%>
+          github:
+            authorization-uri: https://github.com/login/oauth/authorize
+            token-uri: https://github.com/login/oauth/access_token
+            user-info-uri: https://api.github.com/user
+<%_ } _%>
+<%_ if (oauth2Providers.includes('microsoft')) { _%>
+          microsoft:
+            authorization-uri: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+            token-uri: https://login.microsoftonline.com/common/oauth2/v2.0/token
+            user-info-uri: https://graph.microsoft.com/oidc/userinfo
+            user-name-attribute: sub
+<%_ } _%>
+<%_ if (oauth2Providers.includes('keycloak')) { _%>
+          keycloak:
+            issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/master}
+<%_ } _%>
 <%_ } _%>
 <%_ if (authenticationType === 'sso') { _%>
     oauth2:
@@ -42,6 +96,9 @@ spring:
           lob:
             non_contextual_creation: true
   datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/appdb}
+    username: ${DATABASE_USERNAME:appuser}
+    password: ${DATABASE_PASSWORD:secret}
     hikari:
       auto-commit: false
       data-source-properties:

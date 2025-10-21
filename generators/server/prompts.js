@@ -114,8 +114,12 @@ async function prompting() {
                     name: 'None (No authentication)'
                 },
                 {
-                    value: 'oauth2',
-                    name: 'OAuth2 (Resource Server)'
+                    value: 'oauth2-resource',
+                    name: 'OAuth2 Resource Server (JWT validation)'
+                },
+                {
+                    value: 'oauth2-client',
+                    name: 'OAuth2 Client (Google/GitHub/Keycloak login)'
                 },
                 {
                     value: 'sso',
@@ -133,11 +137,36 @@ async function prompting() {
             default: 'none'
         },
         {
-            when: (answers) => answers.authenticationType === 'oauth2',
+            when: (answers) => answers.authenticationType === 'oauth2-resource',
             type: 'string',
             name: 'oauth2IssuerUri',
             message: 'OAuth2 Issuer URI (e.g., https://your-auth-server.com)',
             default: 'https://your-auth-server.com'
+        },
+        {
+            when: (answers) => answers.authenticationType === 'oauth2-client',
+            type: 'checkbox',
+            name: 'oauth2Providers',
+            message: 'Which OAuth2 providers do you want to support?',
+            choices: [
+                {
+                    value: 'google',
+                    name: 'Google'
+                },
+                {
+                    value: 'github',
+                    name: 'GitHub'
+                },
+                {
+                    value: 'microsoft',
+                    name: 'Microsoft'
+                },
+                {
+                    value: 'keycloak',
+                    name: 'Keycloak'
+                }
+            ],
+            default: ['google']
         },
         {
             when: (answers) => answers.authenticationType === 'sso',

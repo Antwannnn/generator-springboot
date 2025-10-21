@@ -11,9 +11,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 <%_ } _%>
-<%_ if (authenticationType === 'oauth2' || authenticationType === 'sso') { _%>
+<%_ if (authenticationType === 'oauth2-resource' || authenticationType === 'sso') { _%>
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+import org.springframework.security.web.SecurityFilterChain;
+<%_ } _%>
+<%_ if (authenticationType === 'oauth2-client') { _%>
 import org.springframework.security.web.SecurityFilterChain;
 <%_ } _%>
 <%_ if (authenticationType === 'jwt') { _%>
@@ -34,7 +37,7 @@ import <%= packageName %>.config.security.JwtAuthenticationFilter;
 @EnableWebSecurity
 public class SecurityConfig {
 
-<%_ if (authenticationType === 'oauth2' || authenticationType === 'sso') { _%>
+<%_ if (authenticationType === 'oauth2-resource' || authenticationType === 'sso') { _%>
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
@@ -60,6 +63,24 @@ public class SecurityConfig {
         JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
         converter.setJwtGrantedAuthoritiesConverter(authoritiesConverter);
         return converter;
+    }
+<%_ } _%>
+
+<%_ if (authenticationType === 'oauth2-client') { _%>
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(authz -> authz
+                .requestMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .anyRequest().authenticated()
+            )
+            .oauth2Login(oauth2 -> oauth2
+                .defaultSuccessUrl("/", true)
+                .failureUrl("/login?error=true")
+            );
+        
+        return http.build();
     }
 <%_ } _%>
 

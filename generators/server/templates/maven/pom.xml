@@ -173,11 +173,18 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <%_ } _%>
-        <%_ if (authenticationType === 'oauth2' || authenticationType === 'sso') { _%>
+        <%_ if (authenticationType === 'oauth2-resource' || authenticationType === 'sso') { _%>
         <!-- OAuth2 Resource Server -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <%_ } _%>
+        <%_ if (authenticationType === 'oauth2-client') { _%>
+        <!-- OAuth2 Client -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
         <%_ } _%>
         <%_ if (authenticationType === 'jwt') { _%>
