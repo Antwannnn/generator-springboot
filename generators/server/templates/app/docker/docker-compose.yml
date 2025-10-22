@@ -35,6 +35,29 @@ services:
       - "3306:3306"
 <%_ } _%>
 
+<%_ if (features.includes('keycloak')) { _%>
+  keycloak:
+    image: <%= KEYCLOAK_IMAGE %>
+    environment:
+      - KEYCLOAK_ADMIN=admin
+      - KEYCLOAK_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_URL_HOST=postgresqldb
+      - KC_DB_URL_DATABASE=appdb
+      - KC_DB_USERNAME=appuser
+      - KC_DB_PASSWORD=secret
+      - KC_HOSTNAME_STRICT=false
+      - KC_HOSTNAME_STRICT_HTTPS=false
+    ports:
+      - "8880:8080"
+    volumes:
+      - keycloak_data:/opt/keycloak/data
+    command:
+      - start-dev
+    depends_on:
+      - postgresqldb
+<%_ } _%>
+
 <%_ if (features.includes('localstack')) { _%>
   localstack:
     image: <%= LOCALSTACK_IMAGE %>
@@ -50,4 +73,9 @@ services:
       - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
       - "/var/run/docker.sock:/var/run/docker.sock"
       - "../.localstack:/etc/localstack/init/ready.d"  # ready hook
+<%_ } _%>
+
+volumes:
+<%_ if (features.includes('keycloak')) { _%>
+  keycloak_data:
 <%_ } _%>

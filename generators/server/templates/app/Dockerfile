@@ -1,19 +1,28 @@
-FROM eclipse-temurin:17.0.14_7-jre-focal as builder
-WORKDIR application
-<%_ if (buildTool === 'maven') { _%>
-ARG JAR_FILE=target/<%= appName %>-<%= DEFAULT_APP_VERSION %>.jar
-<%_ } _%>
-<%_ if (buildTool === 'gradle') { _%>
-ARG JAR_FILE=build/libs/<%= appName %>-<%= DEFAULT_APP_VERSION %>.jar
-<%_ } _%>
-COPY ${JAR_FILE} application.jar
-RUN java -Djarmode=layertools -jar application.jar extract
+FROM maven:3.9-eclipse-temurin-17 AS build
 
-# the second stage of our build will copy the extracted layers
-FROM eclipse-temurin:17.0.14_7-jre-focal
-WORKDIR application
-COPY --from=builder application/dependencies/ ./
-COPY --from=builder application/spring-boot-loader/ ./
-COPY --from=builder application/snapshot-dependencies/ ./
-COPY --from=builder application/application/ ./
-ENTRYPOINT ["java", "org.springframework.boot.loader.JarLauncher"]
+WORKDIR /app
+
+COPY pom.xml .
+COPY src ./src
+
+COPY sonar-project.properties* ./
+
+RUN mvn clean package -DskipTests
+
+FROM eclipse-temurin:17-jre
+
+WORKDIR /app
+
+RUN groupadd -r spring && useradd -r -g spring spring
+
+RUN mkdir -p /app/logs && chown -R spring:spring /app
+
+USER spring:spring
+
+COPY --from=build /app/target/*.jar app.jar
+
+EXPOSE 8080
+
+ENV JAVA_OPTS="-Xmx512m -Xms256m"
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
