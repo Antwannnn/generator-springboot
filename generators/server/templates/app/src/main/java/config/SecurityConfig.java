@@ -25,6 +25,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import <%= packageName %>.config.security.JwtAuthenticationEntryPoint;
 import <%= packageName %>.config.security.JwtAuthenticationFilter;
+import <%= packageName %>.config.security.JwtTokenProvider;
 import <%= packageName %>.config.security.CustomUserDetailsService;
 import <%= packageName %>.repositories.UserRepository;
 <%_ } _%>
@@ -120,8 +121,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter();
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserDetailsService userDetailsService) {
+        return new JwtAuthenticationFilter(tokenProvider, userDetailsService);
     }
 
     @Bean
