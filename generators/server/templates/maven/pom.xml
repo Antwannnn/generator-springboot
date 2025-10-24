@@ -173,7 +173,7 @@
             <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <%_ } _%>
-        <%_ if (authenticationTypes && (authenticationTypes.includes('oauth2-resource') || authenticationTypes.includes('sso'))) { _%>
+        <%_ if (authenticationTypes && authenticationTypes.includes('oauth2-resource')) { _%>
         <!-- OAuth2 Resource Server -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

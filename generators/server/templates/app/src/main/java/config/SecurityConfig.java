@@ -8,15 +8,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.http.SessionCreationPolicy;
-<%_ if (authenticationTypes.includes('basic') || authenticationTypes.includes('jwt')) { _%>
+<%_ if (authenticationTypes.includes('jwt')) { _%>
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-<%_ } _%>
-<%_ if (authenticationTypes.includes('oauth2-resource') || authenticationTypes.includes('sso')) { _%>
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
-import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-<%_ } _%>
-<%_ if (authenticationTypes.includes('jwt')) { _%>
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -24,10 +18,17 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import <%= packageName %>.config.security.JwtAuthenticationEntryPoint;
-import <%= packageName %>.config.security.JwtAuthenticationFilter;
 import <%= packageName %>.config.security.JwtTokenProvider;
 import <%= packageName %>.config.security.CustomUserDetailsService;
 import <%= packageName %>.repositories.UserRepository;
+<%_ } _%>
+<%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
+<%_ } _%>
+<%_ if (authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource')) { _%>
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import <%= packageName %>.config.security.CompositeJwtDecoder;
 <%_ } _%>
 
 @Configuration
@@ -36,14 +37,20 @@ public class SecurityConfig {
 
 <%_ if (authenticationTypes.includes('jwt')) { _%>
     private final UserRepository userRepository;
+<%_ if (authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource')) { _%>
+    private final CompositeJwtDecoder compositeJwtDecoder;
+<%_ } _%>
 
-    public SecurityConfig(UserRepository userRepository) {
+    public SecurityConfig(UserRepository userRepository<%_ if (authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource')) { _%>, CompositeJwtDecoder compositeJwtDecoder<%_ } _%>) {
         this.userRepository = userRepository;
+<%_ if (authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource')) { _%>
+        this.compositeJwtDecoder = compositeJwtDecoder;
+<%_ } _%>
     }
 <%_ } _%>
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http<%_ if (authenticationTypes.includes('jwt') && !(authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource'))) { _%>, JwtTokenProvider tokenProvider, UserDetailsService userDetailsService<%_ } _%>) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(authz -> authz
@@ -57,11 +64,11 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
             );
 
-        <%_ if (authenticationTypes.includes('oauth2-resource') || authenticationTypes.includes('sso')) { _%>
+        <%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
         // OAuth2 Resource Server (JWT validation)
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                .jwt(jwt -> jwt<%_ if (authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource')) { _%>.decoder(compositeJwtDecoder)<%_ } _%>.jwtAuthenticationConverter(jwtAuthenticationConverter()))
             );
         <%_ } _%>
 
@@ -77,18 +84,16 @@ public class SecurityConfig {
         // JWT Authentication
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint()))
-            .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+<%_ if (!(authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource'))) { _%>
+            .addFilterBefore(jwtAuthenticationFilter(tokenProvider, userDetailsService), UsernamePasswordAuthenticationFilter.class);
+<%_ } _%>
         <%_ } _%>
 
-        <%_ if (authenticationTypes.includes('basic')) { _%>
-        // Basic Authentication
-        http.httpBasic(basic -> basic.realmName("<%= appName %>"));
-        <%_ } _%>
-
+        
         return http.build();
     }
 
-<%_ if (authenticationTypes.includes('oauth2-resource') || authenticationTypes.includes('sso')) { _%>
+<%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
     @Bean
     public JwtAuthenticationConverter jwtAuthenticationConverter() {
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -120,10 +125,12 @@ public class SecurityConfig {
         return new CustomUserDetailsService(userRepository);
     }
 
+<%_ if (authenticationTypes.includes('jwt') && !(authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource'))) { _%>
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider tokenProvider, UserDetailsService userDetailsService) {
         return new JwtAuthenticationFilter(tokenProvider, userDetailsService);
     }
+<%_ } _%>
 
     @Bean
     public JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint() {
@@ -131,7 +138,7 @@ public class SecurityConfig {
     }
 <%_ } _%>
 
-<%_ if (authenticationTypes.includes('basic') || authenticationTypes.includes('jwt')) { _%>
+<%_ if (authenticationTypes.includes('jwt')) { _%>
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();

@@ -213,6 +213,11 @@ module.exports = class extends BaseGenerator {
                 mainJavaTemplates.push('repositories/UserRepository.java');
                 mainJavaTemplates.push('config/UserInitializer.java');
             }
+            
+            // Add CompositeJwtDecoder when both JWT and OAuth2-resource are selected
+            if (configOptions.authenticationTypes.includes('jwt') && configOptions.authenticationTypes.includes('oauth2-resource')) {
+                mainJavaTemplates.push('config/security/CompositeJwtDecoder.java');
+            }
         }
         this.generateMainJavaCode(configOptions, mainJavaTemplates);
 

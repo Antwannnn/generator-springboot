@@ -76,6 +76,15 @@ services:
 <%_ } _%>
 
 volumes:
+<%_ if (databaseType === 'postgresql') { _%>
+  postgresqldb_data:
+<%_ } _%>
+<%_ if (databaseType === 'mysql') { _%>
+  mysqldb_data:
+<%_ } _%>
+<%_ if (databaseType === 'mariadb') { _%>
+  mariadb_data:
+<%_ } _%>
 <%_ if (features.includes('keycloak')) { _%>
   keycloak_data:
 <%_ } _%>

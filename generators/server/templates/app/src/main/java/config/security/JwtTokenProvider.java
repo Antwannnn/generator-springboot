@@ -26,6 +26,14 @@ public class JwtTokenProvider {
     @Value("${app.security.jwt.expiration}")
     private int jwtExpirationInMs;
 
+<%_ if (authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource')) { _%>
+    @Value("${server.uri}")
+    private String localIssuerUri;
+
+    @Value("${server.port}")
+    private int localPort;
+<%_ } _%>
+
     public String generateToken(Authentication authentication) {
         try {
             UserDetails userPrincipal = (UserDetails) authentication.getPrincipal();
@@ -34,8 +42,8 @@ public class JwtTokenProvider {
             // Create JWT claims
             JWTClaimsSet claimsSet = new JWTClaimsSet.Builder()
                     .subject(userPrincipal.getUsername())
-                    .issuer("your-app")
-                    .audience("your-app")
+                    .issuer(getLocalIssuerUri())
+                    .audience(getLocalIssuerUri())
                     .issueTime(new Date())
                     .expirationTime(expiryDate)
                     .claim("authorities", userPrincipal.getAuthorities())
@@ -76,4 +84,19 @@ public class JwtTokenProvider {
             return false;
         }
     }
+
+<%_ if (authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource')) { _%>
+    public String getIssuer(String token) {
+        try {
+            SignedJWT signedJWT = SignedJWT.parse(token);
+            return signedJWT.getJWTClaimsSet().getIssuer();
+        } catch (ParseException e) {
+            throw new RuntimeException("Error extracting issuer from token", e);
+        }
+    }
+
+    public String getLocalIssuerUri() {
+        return localIssuerUri + ":" + localPort;
+    }
+<%_ } _%>
 }

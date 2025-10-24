@@ -118,16 +118,8 @@ async function prompting() {
                     name: 'OAuth2 Client (Google/GitHub/Keycloak login)'
                 },
                 {
-                    value: 'sso',
-                    name: 'SSO (Single Sign-On)'
-                },
-                {
                     value: 'jwt',
                     name: 'JWT (JSON Web Tokens)'
-                },
-                {
-                    value: 'basic',
-                    name: 'Basic Authentication'
                 }
             ],
             default: []
@@ -163,20 +155,6 @@ async function prompting() {
                 }
             ],
             default: ['google']
-        },
-        {
-            when: (answers) => answers.authenticationTypes.includes('sso'),
-            type: 'string',
-            name: 'ssoProvider',
-            message: 'SSO Provider (e.g., keycloak, okta, azure)',
-            default: 'keycloak'
-        },
-        {
-            when: (answers) => answers.authenticationTypes.includes('sso'),
-            type: 'string',
-            name: 'ssoIssuerUri',
-            message: 'SSO Issuer URI',
-            default: 'http://localhost:8080/realms/master'
         },
         {
             type: 'list',

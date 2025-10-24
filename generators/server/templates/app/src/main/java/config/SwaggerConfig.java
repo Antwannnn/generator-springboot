@@ -11,15 +11,15 @@ import org.springframework.context.annotation.Configuration;
 @OpenAPIDefinition(
         info = @Info(title = "<%= appName %>", version = "v1"),
         servers = @Server(url = "/")<%_ if (authenticationTypes && authenticationTypes.length > 0) { _%>,
-        security = @SecurityRequirement(name = "<%_ if (authenticationTypes.includes('oauth2-resource') || authenticationTypes.includes('sso')) { _%>oauth2<%_ } else if (authenticationTypes.includes('jwt')) { _%>bearerAuth<%_ } else if (authenticationTypes.includes('basic')) { _%>basicAuth<%_ } _%>")<%_ } _%>)
-<%_ if (authenticationTypes && (authenticationTypes.includes('oauth2-resource') || authenticationTypes.includes('sso'))) { _%>
+        security = @SecurityRequirement(name = "<%_ if (authenticationTypes.includes('oauth2-resource')) { _%>oauth2<%_ } else if (authenticationTypes.includes('jwt')) { _%>bearerAuth<%_ } _%>")<%_ } _%>)
+<%_ if (authenticationTypes && authenticationTypes.includes('oauth2-resource')) { _%>
 @SecurityScheme(
         name = "oauth2",
         type = io.swagger.v3.oas.annotations.enums.SecuritySchemeType.OAUTH2,
         flows = @io.swagger.v3.oas.annotations.security.OAuthFlows(
                 authorizationCode = @io.swagger.v3.oas.annotations.security.OAuthFlow(
-                        authorizationUrl = "<%= authenticationTypes.includes('oauth2-resource') ? oauth2IssuerUri : ssoIssuerUri %>/protocol/openid-connect/auth",
-                        tokenUrl = "<%= authenticationTypes.includes('oauth2-resource') ? oauth2IssuerUri : ssoIssuerUri %>/protocol/openid-connect/token"
+                        authorizationUrl = "<%= oauth2IssuerUri %>/protocol/openid-connect/auth",
+                        tokenUrl = "<%= oauth2IssuerUri %>/protocol/openid-connect/token"
                 )
         )
 )
@@ -30,13 +30,6 @@ import org.springframework.context.annotation.Configuration;
         type = io.swagger.v3.oas.annotations.enums.SecuritySchemeType.HTTP,
         bearerFormat = "JWT",
         scheme = "bearer"
-)
-<%_ } _%>
-<%_ if (authenticationTypes && authenticationTypes.includes('basic')) { _%>
-@SecurityScheme(
-        name = "basicAuth",
-        type = io.swagger.v3.oas.annotations.enums.SecuritySchemeType.HTTP,
-        scheme = "basic"
 )
 <%_ } _%>
 class SwaggerConfig {}

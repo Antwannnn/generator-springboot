@@ -65,12 +65,6 @@ spring:
             issuer-uri: ${KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/master}
 <%_ } _%>
 <%_ } _%>
-<%_ if (authenticationTypes.includes('sso')) { _%>
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${SSO_ISSUER_URI:<%= ssoIssuerUri %>}
-<%_ } _%>
 <%_ } _%>
   jpa:
     show-sql: false
@@ -114,6 +108,7 @@ spring:
 
 server:
   port: 8080
+  uri: http://localhost
   shutdown: graceful
 
 management:
@@ -134,13 +129,6 @@ app:
       expiration: ${JWT_EXPIRATION:86400000}
 <%_ } _%>
 
-<%_ if (authenticationTypes && authenticationTypes.includes('basic')) { _%>
-# Basic Authentication
-app:
-  security:
-    basic:
-      enabled: true
-<%_ } _%>
 
 <%_ if (features.includes('elk')) { _%>
 # ELK Configuration
