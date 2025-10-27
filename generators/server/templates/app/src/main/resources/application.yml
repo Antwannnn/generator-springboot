@@ -10,6 +10,12 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: ${OAUTH2_ISSUER_URI:<%= oauth2IssuerUri %>}
+          single-logout-enabled: true
+          token-url: ${OAUTH2_TOKEN_URL:<%= oauth2TokenUrl %>}
+          logout-url: ${OAUTH2_LOGOUT_URL:<%= oauth2LogoutUrl %>}
+        client:
+          client_id: ${OAUTH2_ISSUER_CLIENT_ID:<%= appName %>}
+          client_secret: ${OAUTH2_ISSUER_CLIENT_SECRET:my-ultra-secret-client-secret-that-needs-to-be-long-enough-to-be-secure}
 <%_ } _%>
 <%_ if (authenticationTypes.includes('oauth2-client')) { _%>
     oauth2:
@@ -125,10 +131,9 @@ management:
 app:
   security:
     jwt:
-      secret: ${JWT_SECRET:mySecretKey}
+      secret: ${JWT_SECRET:a-string-secret-at-least-256-bits-long}
       expiration: ${JWT_EXPIRATION:86400000}
 <%_ } _%>
-
 
 <%_ if (features.includes('elk')) { _%>
 # ELK Configuration

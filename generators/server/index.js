@@ -203,9 +203,10 @@ module.exports = class extends BaseGenerator {
             
             if (configOptions.authenticationTypes.includes('jwt')) {
                 mainJavaTemplates.push('config/security/JwtTokenProvider.java');
-                mainJavaTemplates.push('config/security/JwtAuthenticationFilter.java');
                 mainJavaTemplates.push('config/security/JwtAuthenticationEntryPoint.java');
                 mainJavaTemplates.push('config/security/CustomUserDetailsService.java');
+                mainJavaTemplates.push('config/security/TokenBlacklistService.java');
+                mainJavaTemplates.push('config/security/CompositeJwtDecoder.java');
                 mainJavaTemplates.push('web/controllers/AuthController.java');
                 mainJavaTemplates.push('model/request/LoginRequest.java');
                 mainJavaTemplates.push('model/response/JwtAuthenticationResponse.java');
@@ -214,10 +215,7 @@ module.exports = class extends BaseGenerator {
                 mainJavaTemplates.push('config/UserInitializer.java');
             }
             
-            // Add CompositeJwtDecoder when both JWT and OAuth2-resource are selected
-            if (configOptions.authenticationTypes.includes('jwt') && configOptions.authenticationTypes.includes('oauth2-resource')) {
-                mainJavaTemplates.push('config/security/CompositeJwtDecoder.java');
-            }
+            // Remove the separate condition for CompositeJwtDecoder since it's now always generated with JWT
         }
         this.generateMainJavaCode(configOptions, mainJavaTemplates);
 
