@@ -22,6 +22,7 @@ public class UserInitializer implements CommandLineRunner {
         // Create default admin user if it doesn't exist
         if (!userRepository.existsByUsername("admin")) {
             User admin = new User();
+            admin.setEmail("admin@<%= appName %>.com");
             admin.setUsername("admin");
             admin.setPassword(passwordEncoder.encode("admin"));
             admin.setRole("ROLE_ADMIN");
@@ -33,6 +34,7 @@ public class UserInitializer implements CommandLineRunner {
         // Create default user if it doesn't exist
         if (!userRepository.existsByUsername("user")) {
             User user = new User();
+            user.setEmail("user@<%= appName %>.com");
             user.setUsername("user");
             user.setPassword(passwordEncoder.encode("user"));
             user.setRole("ROLE_USER");

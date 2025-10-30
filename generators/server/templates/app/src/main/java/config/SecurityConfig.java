@@ -3,6 +3,7 @@ package <%= packageName %>.config;
 <%_ if (authenticationTypes && authenticationTypes.length > 0) { _%>
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -17,18 +18,14 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import <%= packageName %>.config.security.JwtAuthenticationEntryPoint;
-import <%= packageName %>.config.security.JwtTokenProvider;
+import <%= packageName %>.config.security.JwtAuthenticationFilter;
 import <%= packageName %>.config.security.CustomUserDetailsService;
-import <%= packageName %>.config.security.TokenBlacklistService;
 import <%= packageName %>.repositories.UserRepository;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 <%_ } _%>
 <%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
-<%_ } _%>
-<%_ if (authenticationTypes.includes('jwt')) { _%>
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import <%= packageName %>.config.security.CompositeJwtDecoder;
 <%_ } _%>
 
 @Configuration
@@ -37,34 +34,36 @@ public class SecurityConfig {
 
 <%_ if (authenticationTypes.includes('jwt')) { _%>
     private final UserRepository userRepository;
-    private final CompositeJwtDecoder compositeJwtDecoder;
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
-    public SecurityConfig(UserRepository userRepository, CompositeJwtDecoder compositeJwtDecoder) {
+    public SecurityConfig(UserRepository userRepository, JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.userRepository = userRepository;
-        this.compositeJwtDecoder = compositeJwtDecoder;
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 <%_ } _%>
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http<%_ if (authenticationTypes.includes('jwt') && authenticationTypes.includes('oauth2-resource')) { _%>, TokenBlacklistService tokenBlacklistService<%_ } _%>) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
+            <%_ if (authenticationTypes.includes('jwt')) { _%>
+            .cors(Customizer.withDefaults())
+            <%_ } _%>
             .authorizeHttpRequests(authz -> authz
                 .requestMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                 <%_ if (authenticationTypes.includes('oauth2-client')) { _%>
                 .requestMatchers("/oauth2/**", "/login/**").permitAll()
                 <%_ } _%>
                 <%_ if (authenticationTypes.includes('jwt')) { _%>
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refresh").permitAll()
+                .requestMatchers("/api/auth/login", "/api/auth/signup", "/api/auth/refresh").permitAll()
                 <%_ } _%>
                 .anyRequest().authenticated()
             );
 
         <%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
-        // OAuth2 Resource Server (JWT validation)
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt<%_ if (authenticationTypes.includes('jwt')) { _%>.decoder(compositeJwtDecoder)<%_ } _%>.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
             );
         <%_ } _%>
 
@@ -77,17 +76,13 @@ public class SecurityConfig {
         <%_ } _%>
 
         <%_ if (authenticationTypes.includes('jwt')) { _%>
-        // JWT Authentication
+
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint()))
-<%_ if (!authenticationTypes.includes('oauth2-resource')) { _%>
-            .oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.decoder(compositeJwtDecoder).jwtAuthenticationConverter(jwtAuthenticationConverter()))
-            );
-<%_ } _%>
+            .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint()));
+
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         <%_ } _%>
 
-        
         return http.build();
     }
 

@@ -1,41 +1,49 @@
 package <%= packageName %>.web.controllers;
 
 <%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
+import com.nimbusds.jose.JOSEException;
+import <%= packageName %>.model.entity.User;
+import <%= packageName %>.model.request.SignupRequest;
+import <%= packageName %>.repositories.UserRepository;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.server.resource.authentication.AbstractOAuth2TokenAuthenticationToken;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import <%= packageName %>.config.security.JwtTokenProvider;
-import <%= packageName %>.config.security.TokenBlacklistService;
+import <%= packageName %>.config.security.JwtService;
 import <%= packageName %>.model.request.LoginRequest;
-import <%= packageName %>.model.response.JwtAuthenticationResponse;
+import org.springframework.http.HttpStatus;
+
+import java.time.Duration;
+import java.util.Map;
 <%_ } _%>
 <%_ if (authenticationTypes && authenticationTypes.includes('oauth2-resource')) { _%>
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
-import java.util.Map;
 <%_ } _%>
 
 @RestController
 @RequestMapping("/api/auth")
+<%_ if (authenticationTypes.includes('jwt')) { _%>
+@Slf4j
+<%_ } _%>
 public class AuthController {
 
 <%_ if (authenticationTypes.includes('jwt')) { _%>
-    private final AuthenticationManager authenticationManager;
-    private final JwtTokenProvider tokenProvider;
-    private final TokenBlacklistService tokenBlacklistService;
+    private final AuthenticationManager authManager;
+    private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
+    private final UserRepository userRepository;
 <%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
     private final String logoutUrl;
 
@@ -56,95 +64,138 @@ public class AuthController {
 
     public AuthController(
             AuthenticationManager authenticationManager,
-            JwtTokenProvider tokenProvider,
-            TokenBlacklistService tokenBlacklistService<%_ if (authenticationTypes.includes('oauth2-resource')) { _%>,
-            @Value("${spring.security.oauth2.resourceserver.jwt.logout-url}") String logoutUrl<%_ } _%>
-    ) {
-        this.authenticationManager = authenticationManager;
-        this.tokenProvider = tokenProvider;
-        this.tokenBlacklistService = tokenBlacklistService;
+            JwtService jwtService,
+            PasswordEncoder passwordEncoder,
+            UserRepository userRepository<%_ if (authenticationTypes.includes('oauth2-resource')) { _%>,
+            @Value("${spring.security.oauth2.resourceserver.jwt.logout-url}") String logoutUrl<%_ } _%>    ) {
+        this.authManager = authenticationManager;
+        this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
+        this.userRepository = userRepository;
 <%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
         this.logoutUrl = logoutUrl;
 <%_ } _%>
     }
-<%_ } _%>
-<%_ if (authenticationTypes.includes('oauth2-resource') && !authenticationTypes.includes('jwt')) { _%>
-    @Value("${app.security.oauth2.logout-url}")
-    private final String logoutUrl;
-    
-    @Value("${spring.security.oauth2.resourceserver.jwt.token-url}")
-    private String tokenUrl;
-    
-    @Value("${spring.security.oauth2.resourceserver.client.client_id}")
-    private String clientId;
-    
-    @Value("${spring.security.oauth2.resourceserver.client.client_secret}")
-    private String clientSecret;
-    
-    private final RestTemplate restTemplate = new RestTemplate();
-<%_ } _%>
 
-<%_ if (authenticationTypes.includes('jwt')) { _%>
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        if(authentication == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        return ResponseEntity.ok(authentication);
+    }
+
     @PostMapping("/login")
-    public ResponseEntity<JwtAuthenticationResponse> authenticateUser(@RequestBody LoginRequest loginRequest) {
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
+    public ResponseEntity<?> login(@RequestBody LoginRequest request, HttpServletResponse response, Authentication authentication) throws JOSEException {
+        if(authentication != null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        Authentication auth = authManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
 
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-        String jwt = tokenProvider.generateToken(authentication);
+        String accessToken = jwtService.generateAccessToken(auth.getName());
 
-        return ResponseEntity.ok(new JwtAuthenticationResponse(jwt));
+        String refreshToken = jwtService.generateRefreshToken(auth.getName());
+
+        ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(Duration.ofMinutes(15))
+                .build();
+
+        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(Duration.ofDays(7))
+                .build();
+
+        response.setHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, refreshCookie.toString());
+
+        return ResponseEntity.ok(Map.of("message","Login successful"));
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<?> logout(Authentication authentication, @RequestHeader(value = "Authorization") String token) {
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        ResponseCookie clearAccessToken = ResponseCookie.from("access_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(0)
+                .build();
 
-        if (authentication == null) {
+        ResponseCookie clearRefreshToken = ResponseCookie.from("refresh_token", "")
+                .httpOnly(true)
+                .secure(true)
+                .path("/")
+                .sameSite("Strict")
+                .maxAge(0)
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, clearAccessToken.toString());
+        response.addHeader(HttpHeaders.SET_COOKIE, clearRefreshToken.toString());
+
+        return ResponseEntity.ok(Map.of("message", "Logout successful"));
+    }
+
+    @PostMapping("/signup")
+    public ResponseEntity<User> signup(@RequestBody SignupRequest signupRequest, Authentication authentication) {
+        if(authentication != null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-
-        String resUrl = null;
-        if (authentication.getPrincipal() instanceof Jwt jwt) {
-<%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
-            if(!jwt.getIssuer().toString().equals(tokenProvider.getLocalIssuerUri()) && singleLogoutEnabled){
-                resUrl = logoutUrl;
+        if(signupRequest.getEmail() != null && !signupRequest.getEmail().isEmpty()) {
+            if(userRepository.existsByUsername(signupRequest.getUsername())) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).build();
             }
-<%_ } _%>
-            tokenBlacklistService.blacklistToken(jwt.getTokenValue());
-        }
-        else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
 
-        SecurityContextHolder.clearContext();
+            User user = new User();
+            user.setUsername(signupRequest.getUsername());
+            user.setEmail(signupRequest.getEmail());
+            user.setPassword(passwordEncoder.encode(signupRequest.getPassword()));
+            user.setRole("ROLE_USER");
+            user.setEnabled(true);
+            userRepository.save(user);
 
-        if (resUrl != null) {
-            return ResponseEntity.status(HttpStatus.FOUND)
-                    .header("Location", resUrl)
-                    .build();
+            return ResponseEntity.ok(user);
         } else {
-            return ResponseEntity.ok("Successfully logged out.");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
-<%_ } _%>
 
-<%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
-    
     @PostMapping("/refresh")
-    public ResponseEntity<?> refreshToken(@RequestBody Map<String,String> body) {
-        String refreshToken = body.get("refresh_token");
-        if (refreshToken == null) return ResponseEntity.badRequest().build();
+    public ResponseEntity<?> refreshToken(HttpServletRequest request, HttpServletResponse response) throws JOSEException {
+        String refreshToken = null;
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refresh_token".equals(cookie.getName())) {
+                    refreshToken = cookie.getValue();
+                }
+            }
+        }
 
-        // Appel à Keycloak pour rafraîchir le token
-        MultiValueMap<String,String> params = new LinkedMultiValueMap<>();
-        params.add("grant_type","refresh_token");
-        params.add("client_id", clientId);
-        params.add("client_secret", clientSecret);
-        params.add("refresh_token", refreshToken);
+        if (refreshToken != null && jwtService.validateToken(refreshToken)) {
+            String username = jwtService.extractUsername(refreshToken);
+            String newAccessToken = jwtService.generateAccessToken(username);
 
-        ResponseEntity<Map> response = restTemplate.postForEntity(tokenUrl, params, Map.class);
-        return ResponseEntity.ok(response.getBody());
+            ResponseCookie accessCookie = ResponseCookie.from("access_token", newAccessToken)
+                    .httpOnly(true)
+                    .path("/")
+                    .sameSite("Strict")
+                    .maxAge(Duration.ofMinutes(15))
+                    .build();
+
+            response.setHeader(HttpHeaders.SET_COOKIE, accessCookie.toString());
+            return ResponseEntity.ok(Map.of("message","Access token refreshed"));
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid refresh token");
     }
 <%_ } _%>
 }

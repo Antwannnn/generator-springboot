@@ -202,20 +202,17 @@ module.exports = class extends BaseGenerator {
             mainJavaTemplates.push('config/SecurityConfig.java');
             
             if (configOptions.authenticationTypes.includes('jwt')) {
-                mainJavaTemplates.push('config/security/JwtTokenProvider.java');
+                mainJavaTemplates.push('config/security/JwtService.java');
+                mainJavaTemplates.push('config/security/JwtAuthenticationFilter.java');
                 mainJavaTemplates.push('config/security/JwtAuthenticationEntryPoint.java');
                 mainJavaTemplates.push('config/security/CustomUserDetailsService.java');
-                mainJavaTemplates.push('config/security/TokenBlacklistService.java');
-                mainJavaTemplates.push('config/security/CompositeJwtDecoder.java');
                 mainJavaTemplates.push('web/controllers/AuthController.java');
                 mainJavaTemplates.push('model/request/LoginRequest.java');
-                mainJavaTemplates.push('model/response/JwtAuthenticationResponse.java');
+                mainJavaTemplates.push('model/request/SignupRequest.java');
                 mainJavaTemplates.push('model/entity/User.java');
                 mainJavaTemplates.push('repositories/UserRepository.java');
                 mainJavaTemplates.push('config/UserInitializer.java');
             }
-            
-            // Remove the separate condition for CompositeJwtDecoder since it's now always generated with JWT
         }
         this.generateMainJavaCode(configOptions, mainJavaTemplates);
 
@@ -241,7 +238,7 @@ module.exports = class extends BaseGenerator {
         // Add authentication test templates
         if (configOptions.authenticationTypes && configOptions.authenticationTypes.includes('jwt')) {
             testJavaTemplates.push('web/controllers/AuthControllerTest.java');
-            testJavaTemplates.push('config/security/JwtTokenProviderTest.java');
+            testJavaTemplates.push('config/security/JwtServiceTest.java');
         }
         this.generateTestJavaCode(configOptions, testJavaTemplates);
 

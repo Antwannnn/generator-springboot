@@ -116,6 +116,8 @@ server:
   port: 8080
   uri: http://localhost
   shutdown: graceful
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:4200}
 
 management:
   endpoints:
@@ -131,7 +133,7 @@ management:
 app:
   security:
     jwt:
-      secret: ${JWT_SECRET:a-string-secret-at-least-256-bits-long}
+      secret: ${JWT_SECRET:YS1zdHJpbmctc2VjcmV0LWF0LWxlYXN0LTI1Ni1iaXRzLWxvbmc=}
       expiration: ${JWT_EXPIRATION:86400000}
 <%_ } _%>
 
