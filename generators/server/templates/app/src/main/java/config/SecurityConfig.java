@@ -57,6 +57,7 @@ public class SecurityConfig {
                 <%_ if (authenticationTypes.includes('jwt')) { _%>
                 .requestMatchers("/api/auth/login", "/api/auth/signup", "/api/auth/refresh").permitAll()
                 <%_ } _%>
+                .requestMatchers("/api/admin/**").hasAuthority("ROLE_ADMIN")
                 .anyRequest().authenticated()
             );
 
@@ -68,18 +69,19 @@ public class SecurityConfig {
         <%_ } _%>
 
         <%_ if (authenticationTypes.includes('oauth2-client')) { _%>
-        // OAuth2 Client (Social login)
         http.oauth2Login(oauth2 -> oauth2
             .defaultSuccessUrl("/", true)
             .failureUrl("/login?error=true")
         );
         <%_ } _%>
 
-        <%_ if (authenticationTypes.includes('jwt')) { _%>
+        <%_ if (authenticationTypes.includes('jwt') && !(authenticationTypes.includes('oauth2-resource') && authenticationTypes.includes('oauth2-client'))) { _%>
 
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint()));
 
+        <%_ } _%>
+        <%_ if (authenticationTypes.includes('jwt')) { _%>
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         <%_ } _%>
 

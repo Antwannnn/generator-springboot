@@ -132,20 +132,6 @@ async function prompting() {
             default: 'https://your-auth-server.com'
         },
         {
-            when: (answers) => answers.authenticationTypes.includes('oauth2-resource'),
-            type: 'string',
-            name: 'oauth2LogoutUrl',
-            message: 'OAuth2 Logout URL (e.g., https://your-auth-server.com/logout)',
-            default: 'https://your-auth-server.com/logout'
-        },
-        {
-            when: (answers) => answers.authenticationTypes.includes('oauth2-resource'),
-            type: 'string',
-            name: 'oauth2TokenUrl',
-            message: 'OAuth2 Token URL (e.g., https://your-auth-server.com/realms/your-realm/protocol/openid-connect/token)',
-            default: 'https://your-auth-server.com/realms/your-realm/protocol/openid-connect/token'
-        },
-        {
             when: (answers) => answers.authenticationTypes.includes('oauth2-client'),
             type: 'checkbox',
             name: 'oauth2Providers',
