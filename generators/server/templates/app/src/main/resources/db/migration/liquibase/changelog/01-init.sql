@@ -4,7 +4,7 @@
 <%_ if (authenticationTypes && authenticationTypes.includes('jwt')) { _%>
 -- changeset generator:01
 CREATE TABLE IF NOT EXISTS users (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
     email VARCHAR(255) NOT NULL UNIQUE,
     username VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
