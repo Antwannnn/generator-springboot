@@ -4,6 +4,7 @@
 node_modules/
 /test-auth-apps
 /test-projects
+/oauth-client-app
 /testapp
 /myservice/
 logs/

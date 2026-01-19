@@ -28,14 +28,7 @@ module.exports = class extends BaseGenerator {
     }
 
     get initializing() {
-        this.logSuccess('Generating JPA entity, repository, service and controller');
-        return {
-            validateEntityName() {
-                const context = this.context;
-                console.log(`EntityName: ${this.options.entityName}, basePath: ${this.options.basePath}`);
-                //this.env.error("The entity name is invalid");
-            }
-        }
+        return this._initializing();
     }
 
     /*get prompting() {
