@@ -4,19 +4,19 @@ const _ = require('lodash');
 class UMLParser {
   async parseFile(umlContent) {
     try {
-      console.log('Starting manual UML parsing...');
+      console.log('Démarrage de l\'analyse manuelle UML...');
       const parsed = this.parseManually(umlContent);
-      console.log('Parsed result:', JSON.stringify(parsed, null, 2));
+      console.log('Résultat de l\'analyse:', JSON.stringify(parsed, null, 2));
       return this.transformToEntityModel(parsed);
     } catch (error) {
-      console.error('Parser error:', error);
-      throw new Error(`Failed to parse UML: ${error.message}`);
+      console.error('Erreur d\'analyse:', error);
+      throw new Error(`Échec de l'analyse UML: ${error.message}`);
     }
   }
 
   /*
   Avec cette fonction on parse manuellement les fichiers UML de sorte
-  à avoir le contrôle sur le processus de parsing.
+  à avoir le contrôle sur toute la chaîne.
   */
   parseManually(umlContent) {
     const entities = [];
@@ -45,21 +45,22 @@ class UMLParser {
           members: []
         };
         inClass = true;
-        console.log('Found class:', currentClass.name);
+        console.log('Classe trouvée:', currentClass.name);
         continue;
       }
 
+      // Fin de classe
       if (line === '}' && inClass) {
         if (currentClass) {
           entities.push(currentClass);
-          console.log('Completed class:', currentClass.name, 'with', currentClass.members.length, 'members');
+          console.log('Classe complétée:', currentClass.name, 'avec', currentClass.members.length, 'membre(s)');
         }
         currentClass = null;
         inClass = false;
         continue;
       }
 
-      // Gestion des cardinalités
+      // Parser les relations avec cardinalité
       const relationMatch = line.match(/(\w+)\s+"([^"]+)"\s*(<?-{1,2}>?|\*-{1,2}\*?|o-{1,2}o?)\s+"([^"]+)"\s*(\w+)(?:\s*:\s*(.+))?/);
       if (relationMatch) {
         const [, sourceEntity, sourceCardinality, relType, targetCardinality, targetEntity, label] = relationMatch;
@@ -72,14 +73,15 @@ class UMLParser {
           relationType: relType,
           label: label ? label.trim() : null
         });
-        console.log('Found relationship:', sourceEntity, `"${sourceCardinality}"`, relType, `"${targetCardinality}"`, targetEntity, label ? `: ${label}` : '');
+        console.log('Relation trouvée:', sourceEntity, `"${sourceCardinality}"`, relType, `"${targetCardinality}"`, targetEntity, label ? `: ${label}` : '');
         continue;
       }
 
-      // Parse les attributs
+      // Parser les attributs dans la classe
       if (inClass && currentClass && line) {
         let attrMatch = line.match(/^([+\-#~])?\s*(\w+)\s*:\s*(\w+)(?:\s+<<([^>]+)>>)?(?:\s+\{([^}]+)\})?/);
         
+        // On récupère toutes les infos importantes sur le champ
         if (!attrMatch) {
           attrMatch = line.match(/^([+\-#~])?\s*(\w+)\s+(\w+)(?:\s+<<([^>]+)>>)?(?:\s+\{([^}]+)\})?/);
           if (attrMatch) {
@@ -99,7 +101,7 @@ class UMLParser {
             constraints: constraints ? constraints.split(',').map(c => c.trim()) : []
           };
           currentClass.members.push(member);
-          console.log('Found attribute:', name, ':', type);
+          console.log('Attribut trouvé:', name, ':', type);
         }
       }
     }
@@ -108,7 +110,7 @@ class UMLParser {
   }
 
   transformToEntityModel(umlData) {
-    console.log('Transforming UML data to entity model...');
+    console.log('Transformation des données UML en modèle d\'entité...');
     
     const entities = [];
     const { entities: classEntities, relationships } = umlData;

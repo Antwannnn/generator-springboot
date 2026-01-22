@@ -15,18 +15,18 @@ module.exports = class extends BaseGenerator {
     this.argument('umlFile', {
       type: String,
       required: true,
-      description: 'Path to the PlantUML file'
+      description: 'Chemin vers le fichier PlantUML'
     });
 
     this.option('skip-build', {
       type: Boolean,
-      desc: "Skip verification build after generation",
+      desc: "Ignorer la vérification de build après la génération",
       default: true
     });
   }
 
   initializing() {
-    this.log('Initializing UML to Spring Boot code generator...');
+    this.log('Initialisation du générateur de code UML vers Spring Boot...');
   }
 
   configuring() {
@@ -34,42 +34,42 @@ module.exports = class extends BaseGenerator {
     this.configOptions.formatCode = this.options.formatCode !== false;
     
     if (!this.configOptions.packageName) {
-      this.log.error('No Spring Boot project configuration found. Please run the main generator first.');
+      this.log.error('Aucune configuration de projet Spring Boot trouvée. Veuillez exécuter le générateur principal d\'abord.');
       process.exit(1);
     }
     
-    this.log(`Using package: ${this.configOptions.packageName}`);
-    this.log(`Database type: ${this.configOptions.databaseType}`);
-    this.log(`Migration tool: ${this.configOptions.dbMigrationTool}`);
+    this.log(`Package utilisé: ${this.configOptions.packageName}`);
+    this.log(`Type de base de données: ${this.configOptions.databaseType}`);
+    this.log(`Outil de migration: ${this.configOptions.dbMigrationTool}`);
   }
 
   async _parseUML() {
-    this.log('Reading UML file...');
+    this.log('Lecture du fichier UML...');
     
     const umlFilePath = this.options.umlFile;
     if (!fs.existsSync(umlFilePath)) {
-      this.log.error(`UML file not found: ${umlFilePath}`);
+      this.log.error(`Fichier UML introuvable: ${umlFilePath}`);
       process.exit(1);
     }
 
     const umlContent = fs.readFileSync(umlFilePath, 'utf8');
     
-    this.log('Parsing UML diagram...');
-    this.log('UML Content preview:', umlContent.substring(0, 200));
+    this.log('Analyse du diagramme UML...');
+    this.log('Aperçu du contenu UML:', umlContent.substring(0, 200));
     
     try {
       this.entities = await this.umlParser.parseFile(umlContent);
-      this.log(`Found ${this.entities.length} entities`);
+      this.log(`${this.entities.length} entité(s) trouvée(s)`);
       
       if (this.entities.length > 0) {
         this.entities.forEach(entity => {
-          this.log(`  - ${entity.name} with ${entity.attributes.length} attributes`);
+          this.log(`  - ${entity.name} avec ${entity.attributes.length} attribut(s)`);
         });
       } else {
-        this.log.warn('No entities were parsed from the UML file');
+        this.log.warn('Aucune entité n\'a été analysée dans le fichier UML');
       }
     } catch (error) {
-      this.log.error(`Failed to parse UML: ${error.message}`);
+      this.log.error(`Échec de l'analyse UML: ${error.message}`);
       this.log.error(error.stack);
       process.exit(1);
     }
@@ -81,7 +81,7 @@ module.exports = class extends BaseGenerator {
 
   writing() {
     if (!this.entities || this.entities.length === 0) {
-      this.log.error('No entities found to generate');
+      this.log.error('Aucune entité trouvée à générer');
       return;
     }
 
@@ -97,7 +97,7 @@ module.exports = class extends BaseGenerator {
         _: _ 
       };
 
-      this.log(`Generating code for entity: ${entity.name}`);
+      this.log(`Génération du code pour l'entité: ${entity.name}`);
 
       this._generateAppCode(entityConfig);
       this._generateDbMigrationConfig(entityConfig);
@@ -117,11 +117,11 @@ module.exports = class extends BaseGenerator {
       this._verifyBuild(this.configOptions, null);
     }
 
-    this.log('✅ Code generation completed successfully!');
-    this.log(`Generated ${this.entities.length} entities with repositories, services, and controllers.`);
-    this.log('\nEntities created:');
+    this.log('Génération du code terminée avec succès');
+    this.log(`${this.entities.length} entité(s) générée(s) avec repositories, services et controllers.`);
+    this.log('\nEntités créées:');
     this.entities.forEach(entity => {
-      this.log(`  - ${entity.name} (${entity.attributes.length} attributes)`);
+      this.log(`  - ${entity.name} (${entity.attributes.length} attribut(s))`);
     });
   }
 
