@@ -10,8 +10,8 @@ async function prompting() {
             validate: input =>
                 /^([a-z_][a-z0-9_\-]*)$/.test(input)
                     ? true
-                    : 'The application name you have provided is not valid',
-            message: 'What is the application name?',
+                    : 'Le nom de l\'application que vous avez fourni n\'est pas valide',
+            message: 'Quel est le nom de l\'application ?',
             default: 'myservice'
         },
         {
@@ -20,14 +20,14 @@ async function prompting() {
             validate: input =>
                 /^([a-z_][a-z0-9_]*(\.[a-z_][a-z0-9_]*)*)$/.test(input)
                     ? true
-                    : 'The package name you have provided is not a valid Java package name.',
-            message: 'What is the default package name?',
+                    : 'Le nom de package que vous avez fourni n\'est pas un nom de package Java valide.',
+            message: 'Quel est le nom de package par défaut ?',
             default: 'com.mycompany.myservice'
         },
         {
             type: 'list',
             name: 'databaseType',
-            message: 'Which type of database you want to use?',
+            message: 'Quel type de base de données voulez-vous utiliser ?',
             choices: [
                 {
                     value: 'postgresql',
@@ -47,7 +47,7 @@ async function prompting() {
         {
             type: 'list',
             name: 'dbMigrationTool',
-            message: 'Which type of database migration tool you want to use?',
+            message: 'Quel outil de migration de base de données souhaitez-vous utiliser ?',
             choices: [
                 {
                     value: 'flywaydb',
@@ -68,7 +68,7 @@ async function prompting() {
             when: (answers) => answers.dbMigrationTool === 'liquibase',
             type: 'list',
             name: 'dbMigrationFormat',
-            message: 'Which format do you want to use for database migrations?',
+            message: 'Quel format souhaitez-vous utiliser pour les migrations de base de données ?',
             choices: [
                 {
                     value: 'xml',
@@ -88,7 +88,7 @@ async function prompting() {
         {
             type: 'checkbox',
             name: 'features',
-            message: 'Select the features you want?',
+            message: 'Selectionnez les fonctionnalités voulues ?',
             choices: [
                 {
                     value: 'elk',
@@ -107,7 +107,7 @@ async function prompting() {
         {
             type: 'checkbox',
             name: 'authenticationTypes',
-            message: 'Which authentication methods do you want to implement? (You can select multiple)',
+            message: 'Quelle(s) méthode(s) d\'authentification souhaitez-vous implémenter ? (Vous pouvez en sélectionner plusieurs)',
             choices: [
                 {
                     value: 'oauth2-resource',
@@ -135,7 +135,7 @@ async function prompting() {
             when: (answers) => answers.authenticationTypes.includes('oauth2-client'),
             type: 'checkbox',
             name: 'oauth2Providers',
-            message: 'Which OAuth2 providers do you want to support?',
+            message: 'Quel provider OAuth2 souhaitez-vous utiliser ?',
             choices: [
                 {
                     value: 'google',
@@ -159,7 +159,7 @@ async function prompting() {
         {
             type: 'list',
             name: 'buildTool',
-            message: 'Which build tool do you want to use?',
+            message: 'Quel outil de build souhaitez-vous utiliser ?',
             choices: [
                 {
                     value: 'maven',

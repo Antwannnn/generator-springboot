@@ -30,7 +30,7 @@ et répondez aux questions suivantes :
 ```
 
 ```
-? Quel type de database voulez-vous utiliser ?
+? Quel type de base de données voulez-vous utiliser ?
 > Postgresql
   MySQL
   MariaDB
@@ -58,7 +58,7 @@ et répondez aux questions suivantes :
 ```
 
 ```
-? Quel outil de build voulez-vous utiliser ?
+? Quel outil de build souhaitez-vous utiliser ?
 > Maven
   Gradle
 ```
