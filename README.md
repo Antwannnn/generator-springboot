@@ -1,223 +1,156 @@
 # generator-springboot
-The Yeoman generator for generating Spring Boot microservices.
+Un générateur Yeoman pour générer des projets Springboot en architecture microservices.
 
-## Prerequisites
+## Prérequis
 * Node 20+
 * JDK 17+
 
 ## Installation
 ```shell
 $ npm install -g yo
-$ npm install -g generator-springboot
+$ git clone https://github.com/Antwannnn/generator-springboot.git
+$ cd generator-springboot/generators
+$ npm link
 ```
 
-## How to use?
-Run the following command and answer the questions:
+## Utilisation
+Lancer la commande :
 
 ```shell
 $ yo springboot
 ```
 
-## Features
-The generator-springboot generates a Spring Boot application with the following features configured:
+et répondez aux questions suivantes :
+```
+? Quel est le nom de l'applcation (myservice) ?
+```
 
-* Spring Boot project with Maven and Gradle support
-* Spring Data JPA integration with an option to select databases like MySQL, Postgresql, MariaDB.
-* Flyway and Liquibase database migration support.
-* Spring Cloud AWS support with LocalStack configuration.
-* CORS configuration
-* Swagger UI Integration
-* SpringBoot Actuator configuration
-* Testcontainers based Testing and Local dev mode setup
-* DockerCompose configuration for application, ELK, Prometheus, Grafana
-* GitHub Actions Configuration
+```
+? Quel est le nom du package par défaut (com.mycompany.myservice) ?
+```
+
+```
+? Quel type de database voulez-vous utiliser ?
+> Postgresql
+  MySQL
+  MariaDB
+```
+
+```
+? Quel outil de migration de base de données voulez-vous utiliser ?
+> FlywayDB
+  Liquibase
+  None
+```
+
+```
+? Sélectionnez les fonctionnalités voulues ?
+  ◯ ELK Docker configuration
+  ◯ Prometheus, Grafana Docker configuration
+  ◯ Localstack Docker configuration
+```
+
+```
+? Quelle(s) méthode(s) d'authentification souhaitez-vous implémenter ?
+  ◯ OAuth2 Resource Server (JWT Validation)
+  ◯ OAuth2 Client (Google, Github, Keycloak)
+  ◯ JWT (JSON Web Tokens)
+```
+
+```
+? Quel outil de build voulez-vous utiliser ?
+> Maven
+  Gradle
+```
+
+## Fonctionnalités
+L'outil génère une application springboot en architecture microservices avec les fonctionnalités suivantes configurées :
+
+* Projet Spring boot avec support pour Maven et Gradle
+* Intégration Spring Data & JPA avec une option pour sélectionner la base de données (MySQL, MariaDB, Postgresql)
+* Intégration de différents modes d'authentification (OAuth2 Resource Server, OAuth2 Login, JWT)
+* Support pour les outils de migration FlywayDB et Liquibase
+* Support Spring Cloud AWS avec configuration LocalStack
+* Configuration CORS (Cross-Origin Resource Sharing)
+* Intégration Swagger UI
+* Configuration Spring boot actuator
+* Conteneurs de test pour travailler sur l'application en local
+* Configuration DockerCompose pour ELK, Prometheus, Grafana
+* Configuration GitHub Actions
 * Dockerfile
 * Jenkinsfile
 * SonarQube and JaCoCo based static analysis tools configuration
-* Code formatting using Spotless and google-java-format 
+* Formattage de code en utilisant Spotless et google-java-format
 * JUnit 5
 
-### Generate a SpringBoot Microservice
-After installing the `generator-springboot`, you can generate a new Spring Boot application as follows:
+### Lancement de l'application
+Après la génération vous pouvez lancer le projet en faisant :
 
 ```shell
-$ yo springboot
-Generating SpringBoot Application
-? What is the application name? blog
-? What is the default package name? com.sivalabs.blog
-? Which type of database you want to use? Postgresql
-? Which type of database migration tool you want to use? FlywayDB
-? Select the features you want? ELK Docker configuration, Prometheus, Grafana Docker configuration, Localstack Docker configuration
-? Which build tool do you want to use? Maven
-    force blog/.yo-rc.json
-   create blog/mvnw
-   create blog/mvnw.cmd
-   create blog/.gitignore
-   create blog/.mvn/wrapper/maven-wrapper.jar
-   create blog/.mvn/wrapper/maven-wrapper.properties
-   create blog/pom.xml
-   create blog/Dockerfile
-   create blog/Jenkinsfile
-   create blog/lombok.config
-   create blog/sonar-project.properties
-   create blog/README.md
-   create blog/.github/workflows/maven.yml
-   create blog/src/main/resources/db/migration/postgresql/V1__01_init.sql
-   create blog/docker/docker-compose.yml
-   create blog/docker/docker-compose-app.yml
-   create blog/docker/docker-compose-monitoring.yml
-   create blog/config/prometheus/prometheus.yml
-   create blog/config/grafana/provisioning/dashboards/basic-dashboard.json
-   create blog/config/grafana/provisioning/dashboards/dashboard.yml
-   create blog/config/grafana/provisioning/dashboards/jvm-micrometer_rev10.json
-   create blog/config/grafana/provisioning/datasources/datasource.yml
-   create blog/docker/docker-compose-elk.yml
-   create blog/config/elk/logstash.conf
-   create blog/.localstack/01_init.sh
-   create blog/src/main/java/com/sivalabs/blog/Application.java
-   create blog/src/main/java/com/sivalabs/blog/config/WebMvcConfig.java
-   create blog/src/main/java/com/sivalabs/blog/config/SwaggerConfig.java
-   create blog/src/main/java/com/sivalabs/blog/config/ApplicationProperties.java
-   create blog/src/main/java/com/sivalabs/blog/config/Initializer.java
-   create blog/src/main/java/com/sivalabs/blog/config/GlobalExceptionHandler.java
-   create blog/src/main/java/com/sivalabs/blog/config/logging/Loggable.java
-   create blog/src/main/java/com/sivalabs/blog/config/logging/LoggingAspect.java
-   create blog/src/main/java/com/sivalabs/blog/exception/ResourceNotFoundException.java
-   create blog/src/main/java/com/sivalabs/blog/model/response/PagedResult.java
-   create blog/src/main/java/com/sivalabs/blog/utils/AppConstants.java
-   create blog/src/main/resources/application.properties
-   create blog/src/main/resources/application-local.properties
-   create blog/src/main/resources/logback-spring.xml
-   create blog/src/test/java/com/sivalabs/blog/ApplicationIntegrationTest.java
-   create blog/src/test/java/com/sivalabs/blog/SchemaValidationTest.java
-   create blog/src/test/java/com/sivalabs/blog/common/ContainersConfig.java
-   create blog/src/test/java/com/sivalabs/blog/common/AbstractIntegrationTest.java
-   create blog/src/test/java/com/sivalabs/blog/TestApplication.java
-   create blog/src/test/java/com/sivalabs/blog/SqsListenerIntegrationTest.java
-   create blog/src/test/resources/application-test.properties
-   create blog/src/test/resources/logback-test.xml
-
-No change to package.json was detected. No package manager install will be executed.
-Picked up JAVA_TOOL_OPTIONS:  -Xmx3489m
-[INFO] Scanning for projects...
-[INFO] 
-[INFO] -----------------------< com.sivalabs.blog:blog >-----------------------
-[INFO] Building blog 0.0.1-SNAPSHOT
-[INFO]   from pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- spotless:2.39.0:apply (default-cli) @ blog ---
-[INFO] Index file does not exist. Fallback to an empty index
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/config/SwaggerConfig.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/config/GlobalExceptionHandler.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/config/logging/LoggingAspect.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/exception/ResourceNotFoundException.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/model/response/PagedResult.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/test/java/com/sivalabs/blog/common/ContainersConfig.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/test/java/com/sivalabs/blog/common/AbstractIntegrationTest.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/test/java/com/sivalabs/blog/SchemaValidationTest.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/test/java/com/sivalabs/blog/TestApplication.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/test/java/com/sivalabs/blog/SqsListenerIntegrationTest.java
-[INFO] Spotless.Java is keeping 17 files clean - 10 were changed to be clean, 7 were already clean, 0 were skipped because caching determined they were already clean
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  4.454 s
-[INFO] Finished at: 2023-10-25T16:57:22Z
-[INFO] ------------------------------------------------------------------------
-==========================================
-Your application is generated successfully
-  cd blog
-  > ./mvnw spring-boot:run
-==========================================
-
+$ cd votre_projet
+$ ./mvnw spring-boot:run
 ```
 
-### Generate REST API with CRUD operations
-You can generate REST API with CRUD operation using the following command:
+### Générer une API REST avec CRUD.
+Vous pouvez générer une API REST avec des opérations CRUD en utilisant la commande suivante
 
-**IMPORTANT:** You should run the following command from within the generated project folder. 
+**IMPORTANT:** Vous devez exécuter la commande ci-dessous en étant dans le dossier du projet.
 
 ```shell
-$ cd blog
+$ cd votre_application
 $ yo springboot:controller Customer --base-path /api/customers
 ```
 
-This sub-generator will generate the following:
+Ce sous-générateur générera suite à cela :
 
-* JPA entity
-* Spring Data JPA Repository
-* Service
-* Spring MVC REST Controller with CRUD operations
-* Unit and Integration Tests for REST Controller
-* Flyway or Liquibase migration to create table
+* Une entité JPA
+* Un repository Spring Data JPA
+* Le service associé à l'entité
+* Le controller REST associé à l'entité avec son CRUD
+* test unitaires et d'intégration sur le controller REST
+* La migration flyway / liquibase
 
-```shell
-$ yo springboot:controller Customer --base-path /api/customers
-Generating JPA entity, repository, service and controller
-EntityName: Customer, basePath: /api/customers
-    force .yo-rc.json
-   create src/main/java/com/sivalabs/blog/entities/Customer.java
-   create src/main/java/com/sivalabs/blog/exception/CustomerNotFoundException.java
-   create src/main/java/com/sivalabs/blog/mapper/CustomerMapper.java
-   create src/main/java/com/sivalabs/blog/model/query/FindCustomersQuery.java
-   create src/main/java/com/sivalabs/blog/model/request/CustomerRequest.java
-   create src/main/java/com/sivalabs/blog/model/response/CustomerResponse.java
-   create src/main/java/com/sivalabs/blog/repositories/CustomerRepository.java
-   create src/main/java/com/sivalabs/blog/services/CustomerService.java
-   create src/main/java/com/sivalabs/blog/web/controllers/CustomerController.java
-   create src/test/java/com/sivalabs/blog/web/controllers/CustomerControllerTest.java
-   create src/test/java/com/sivalabs/blog/web/controllers/CustomerControllerIT.java
-   create src/test/java/com/sivalabs/blog/services/CustomerServiceTest.java
-   create src/main/resources/db/migration/postgresql/V2__create_customers_table.sql
+### Générer une API REST avec CRUD + spécifications depuis UML.
+Vous pouvez générer une API Rest avec des opérations CRUD mais possédant aussi des attributs personnalisés en fonction du besoin.
+Pour cela il faudra passer en paramètre du sous-générateur un diagramme UML permettant d'établir les relations entre les entités.
 
-No change to package.json was detected. No package manager install will be executed.
-Picked up JAVA_TOOL_OPTIONS:  -Xmx3489m
-[INFO] Scanning for projects...
-[INFO] 
-[INFO] -----------------------< com.sivalabs.blog:blog >-----------------------
-[INFO] Building blog 0.0.1-SNAPSHOT
-[INFO]   from pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- spotless:2.39.0:apply (default-cli) @ blog ---
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/exception/CustomerNotFoundException.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/model/query/FindCustomersQuery.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/model/request/CustomerRequest.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/entities/Customer.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/mapper/CustomerMapper.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/services/CustomerService.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/main/java/com/sivalabs/blog/web/controllers/CustomerController.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/test/java/com/sivalabs/blog/web/controllers/CustomerControllerIT.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/test/java/com/sivalabs/blog/web/controllers/CustomerControllerTest.java
-[INFO] Writing clean file: /workspace/generator-springboot/blog/src/test/java/com/sivalabs/blog/services/CustomerServiceTest.java
-[INFO] Spotless.Java is keeping 28 files clean - 10 were changed to be clean, 1 were already clean, 17 were skipped because caching determined they were already clean
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  2.246 s
-[INFO] Finished at: 2023-10-25T16:59:48Z
-[INFO] ------------------------------------------------------------------------
-```
+Pour cela il faut exécuter la commande suivante :
 
-## Local Development Setup
+**IMPORTANT:** Vous devez exécuter la commande ci-dessous en étant dans le dossier du projet.
 
 ```shell
-$ git clone https://github.com/sivaprasadreddy/generator-springboot.git
-$ cd generator-springboot
-$ npm install -g yo
-$ npm install 
-$ npm link
-$ yo springboot
+$ cd votre_application
+$ yo springboot:from-uml ./chemin/vers/votre/diagramme.uml
 ```
+Ce sous-générateur générera suite à cela :
 
-## Releasing a new version
-Before publishing a new release, make sure to update the version number in `package.json` updated.
+* Une entité JPA + ses attributs dans la bonne structure de données
+* Les relations entre entitées (in progress)
+* L'application de la (OneToMany, ManyToOne, ManyToMany, OneToOne) (in progress)
+* Les enums si il y'en a (in progress)
+* Un repository Spring Data JPA
+* Le service associé à l'entité
+* Le controller REST associé à l'entité avec son CRUD
+* test unitaires et d'intégration sur le controller REST
+* La migration flyway / liquibase 
 
-```shell
-$ npm login
-$ npm publish
+### Structures de données supportées en UML et leur équivalent
+Les structures de données suivantes sont supportées dans le parsing des diagrammes UML
+
+```javascript
+'string': 'String',
+'int': 'Integer',
+'integer': 'Integer',
+'long': 'Long',
+'boolean': 'Boolean',
+'date': 'LocalDate',
+'localdate': 'LocalDate',
+'datetime': 'LocalDateTime',
+'localdatetime': 'LocalDateTime',
+'timestamp': 'Instant',
+'instant': 'Instant',
+'decimal': 'BigDecimal',
+'bigdecimal': 'BigDecimal',
+'double': 'Double',
+'float': 'Float'
 ```
-
-## License
-The **generator-springboot** is an Open Source software released under the [MIT Licence](https://opensource.org/license/mit/)

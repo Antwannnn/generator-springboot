@@ -58,15 +58,23 @@ module.exports = class extends BaseGenerator {
     this.log('Aperçu du contenu UML:', umlContent.substring(0, 200));
     
     try {
-      this.entities = await this.umlParser.parseFile(umlContent);
+      const result = await this.umlParser.parseFile(umlContent);
+      this.entities = result.entities;
+      this.enums = result.enums || [];
+      
       this.log(`${this.entities.length} entité(s) trouvée(s)`);
+      this.log(`${this.enums.length} enum(s) trouvé(s)`);
       
       if (this.entities.length > 0) {
         this.entities.forEach(entity => {
           this.log(`  - ${entity.name} avec ${entity.attributes.length} attribut(s)`);
         });
-      } else {
-        this.log.warn('Aucune entité n\'a été analysée dans le fichier UML');
+      }
+      
+      if (this.enums.length > 0) {
+        this.enums.forEach(enumItem => {
+          this.log(`  - Enum ${enumItem.name} avec ${enumItem.values.length} valeur(s)`);
+        });
       }
     } catch (error) {
       this.log.error(`Échec de l'analyse UML: ${error.message}`);
@@ -80,6 +88,14 @@ module.exports = class extends BaseGenerator {
   }
 
   writing() {
+    // Générer les enums d'abord
+    if (this.enums && this.enums.length > 0) {
+      this.enums.forEach(enumItem => {
+        this.log(`Génération de l'enum: ${enumItem.name}`);
+        this._generateEnum(enumItem);
+      });
+    }
+
     if (!this.entities || this.entities.length === 0) {
       this.log.error('Aucune entité trouvée à générer');
       return;
@@ -93,6 +109,7 @@ module.exports = class extends BaseGenerator {
         tableName: entity.tableName,
         basePath: '/api/' + _.kebabCase(entity.name) + 's',
         entity: entity,
+        enums: this.enums,
         doesNotSupportDatabaseSequences: this.configOptions.databaseType === 'mysql',
         _: _ 
       };
@@ -101,27 +118,6 @@ module.exports = class extends BaseGenerator {
 
       this._generateAppCode(entityConfig);
       this._generateDbMigrationConfig(entityConfig);
-    });
-  }
-
-  end() {
-    if (!this.entities || this.entities.length === 0) {
-      return;
-    }
-
-    if(this.configOptions.formatCode !== false) {
-      this._formatCode(this.configOptions, null);
-    }
-    
-    if(!this.options['skip-build']) {
-      this._verifyBuild(this.configOptions, null);
-    }
-
-    this.log('Génération du code terminée avec succès');
-    this.log(`${this.entities.length} entité(s) générée(s) avec repositories, services et controllers.`);
-    this.log('\nEntités créées:');
-    this.entities.forEach(entity => {
-      this.log(`  - ${entity.name} (${entity.attributes.length} attribut(s))`);
     });
   }
 
@@ -192,5 +188,20 @@ module.exports = class extends BaseGenerator {
       [constants.KEY_LIQUIBASE_MIGRATION_COUNTER]: counter
     };
     this.config.set(liquibaseMigrantCounter);
+  }
+
+  _generateEnum(enumItem) {
+    const enumConfig = {
+      ...this.configOptions,
+      enumName: enumItem.name,
+      enumValues: enumItem.values,
+      _: _
+    };
+
+    this.renderTemplate(
+      this.templatePath('app/src/main/java/enums/Enum.java'),
+      this.destinationPath(`src/main/java/${this.configOptions.packageFolder}/enums/${enumItem.name}.java`),
+      enumConfig
+    );
   }
 };

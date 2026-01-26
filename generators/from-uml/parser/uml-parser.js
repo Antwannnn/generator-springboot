@@ -20,10 +20,13 @@ class UMLParser {
   */
   parseManually(umlContent) {
     const entities = [];
+    const enums = [];
     const relationships = [];
     const lines = umlContent.split('\n');
     let currentClass = null;
+    let currentEnum = null;
     let inClass = false;
+    let inEnum = false;
 
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i].trim();
@@ -36,6 +39,20 @@ class UMLParser {
         continue;
       }
 
+      // Détecter la déclaration d'enum
+      const enumMatch = line.match(/^\s*enum\s+(\w+)\s*\{?/);
+      if (enumMatch) {
+        currentEnum = {
+          type: 'enum',
+          name: enumMatch[1],
+          values: []
+        };
+        inEnum = true;
+        console.log('Enum trouvé:', currentEnum.name);
+        continue;
+      }
+
+      // Détecter la déclaration de classe
       const classMatch = line.match(/^\s*class\s+(\w+)(?:\s+<<(\w+)>>)?\s*\{?/);
       if (classMatch) {
         currentClass = {
@@ -49,14 +66,30 @@ class UMLParser {
         continue;
       }
 
-      // Fin de classe
-      if (line === '}' && inClass) {
-        if (currentClass) {
+      // Fin de classe ou enum
+      if (line === '}') {
+        if (inClass && currentClass) {
           entities.push(currentClass);
           console.log('Classe complétée:', currentClass.name, 'avec', currentClass.members.length, 'membre(s)');
+          currentClass = null;
+          inClass = false;
+        } else if (inEnum && currentEnum) {
+          enums.push(currentEnum);
+          console.log('Enum complété:', currentEnum.name, 'avec', currentEnum.values.length, 'valeur(s)');
+          currentEnum = null;
+          inEnum = false;
         }
-        currentClass = null;
-        inClass = false;
+        continue;
+      }
+
+      // Parser les valeurs d'enum
+      if (inEnum && currentEnum && line) {
+        // Supprimer les virgules et espaces
+        const enumValue = line.replace(/,\s*$/, '').trim();
+        if (enumValue && !enumValue.includes('(')) { // Ignorer les constructeurs
+          currentEnum.values.push(enumValue);
+          console.log('Valeur enum trouvée:', enumValue);
+        }
         continue;
       }
 
@@ -106,36 +139,49 @@ class UMLParser {
       }
     }
 
-    return { entities, relationships };
+    return { entities, enums, relationships };
   }
 
   transformToEntityModel(umlData) {
     console.log('Transformation des données UML en modèle d\'entité...');
     
     const entities = [];
-    const { entities: classEntities, relationships } = umlData;
+    const enums = [];
+    const { entities: classEntities, enums: enumList, relationships } = umlData;
 
     if (!Array.isArray(classEntities)) {
-      console.warn('Expected array but got:', typeof classEntities);
-      return entities;
+      console.warn('Tableau d\'entités attendu mais reçu:', typeof classEntities);
+      return { entities, enums };
+    }
+
+    // Transformer les enums
+    if (enumList && Array.isArray(enumList)) {
+      enumList.forEach(enumItem => {
+        const enumModel = {
+          name: enumItem.name,
+          values: enumItem.values
+        };
+        enums.push(enumModel);
+        console.log(`Enum créé: ${enumModel.name} avec ${enumModel.values.length} valeur(s)`);
+      });
     }
 
     // On crée les entités
     const entityMap = new Map();
     classEntities.forEach(item => {
-      console.log('Processing item:', item.type, item.name);
+      console.log('Traitement de l\'élément:', item.type, item.name);
       
       if (item.type === 'class') {
         const entity = {
           name: item.name,
           tableName: this.toSnakeCase(item.name),
-          attributes: this.parseAttributes(item.members || []),
+          attributes: this.parseAttributes(item.members || [], enums),
           relationships: [],
           isIdGenerated: this.hasGeneratedId(item.members || [])
         };
         entities.push(entity);
         entityMap.set(item.name, entity);
-        console.log(`Created entity: ${entity.name} with ${entity.attributes.length} attributes`);
+        console.log(`Entité créée: ${entity.name} avec ${entity.attributes.length} attribut(s)`);
       }
     });
 
@@ -159,7 +205,7 @@ class UMLParser {
             cascade: this.inferCascade(sourceRelType)
           };
           sourceEntity.relationships.push(sourceRelation);
-          console.log(`Added relationship: ${sourceEntity.name}.${sourceRelation.fieldName} -> ${targetEntity.name} (@${sourceRelation.type})`);
+          console.log(`Relation ajoutée: ${sourceEntity.name}.${sourceRelation.fieldName} -> ${targetEntity.name} (@${sourceRelation.type})`);
           
           if (targetRelType !== 'None') {
             const targetRelation = {
@@ -171,13 +217,13 @@ class UMLParser {
               cascade: []
             };
             targetEntity.relationships.push(targetRelation);
-            console.log(`Added inverse relationship: ${targetEntity.name}.${targetRelation.fieldName} -> ${sourceEntity.name} (@${targetRelation.type})`);
+            console.log(`Relation inverse ajoutée: ${targetEntity.name}.${targetRelation.fieldName} -> ${sourceEntity.name} (@${targetRelation.type})`);
           }
         }
       });
     }
 
-    return entities;
+    return { entities, enums };
   }
 
   determineRelationTypeFromCardinality(sourceCard, targetCard) {
@@ -216,11 +262,11 @@ class UMLParser {
     return [];
   }
 
-  parseAttributes(members) {
-    console.log('Parsing attributes from members:', members.length, 'members');
+  parseAttributes(members, enums) {
+    console.log('Analyse des attributs depuis les membres:', members.length, 'membre(s)');
     
     if (!Array.isArray(members)) {
-      console.warn('Members is not an array:', members);
+      console.warn('Membres n\'est pas un tableau:', members);
       return [];
     }
 
@@ -230,19 +276,30 @@ class UMLParser {
         const parsedAttr = {
           name: attr.name,
           type: attr.dataType,
-          javaType: this.mapToJavaType(attr.dataType),
+          javaType: this.mapToJavaType(attr.dataType, enums),
+          isEnum: this.isEnumType(attr.dataType, enums),
           columnName: this.toSnakeCase(attr.name),
           isId: this.isIdField(attr),
           nullable: !this.isRequired(attr),
           unique: this.isUnique(attr),
           length: this.getLength(attr)
         };
-        console.log('Parsed attribute:', parsedAttr);
+        console.log('Attribut analysé:', parsedAttr);
         return parsedAttr;
       });
   }
 
-  mapToJavaType(type) {
+  isEnumType(type, enums) {
+    if (!enums || !Array.isArray(enums)) return false;
+    return enums.some(e => e.name === type);
+  }
+
+  mapToJavaType(type, enums) {
+    // Vérifier si c'est un enum défini
+    if (this.isEnumType(type, enums)) {
+      return type;
+    }
+
     const typeMapping = {
       'string': 'String',
       'int': 'Integer',
