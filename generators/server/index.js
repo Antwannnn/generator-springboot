@@ -13,7 +13,7 @@ module.exports = class extends BaseGenerator {
     }
 
     initializing() {
-        this.logSuccess('Generating SpringBoot Application')
+        this.logSuccess('Generation de l\'application SpringBoot...')
     }
 
     get prompting() {
@@ -52,7 +52,7 @@ module.exports = class extends BaseGenerator {
 
     _printGenerationSummary(configOptions) {
         this.logError("==========================================");
-        this.logSuccess("Your application is generated successfully");
+        this.logSuccess("Votre application a été générée avec succès");
         this.logSuccess(`  cd ${configOptions.appName}`);
         if (configOptions.buildTool === 'maven') {
             this.logSuccess("  > ./mvnw spring-boot:run");
