@@ -11,15 +11,13 @@ import java.math.BigDecimal;
 
 @Data
 public class <%= entityName %>Request {
-
 <% entity.attributes.filter(attr => !attr.isId).forEach(function(attr) { %>
-    <% if (!attr.nullable) { %>
+    <%_ if (!attr.nullable) { _%>
     @NotNull(message = "<%= attr.name %> is required")
-    <% } %>
-    <% if (attr.javaType === 'String' && attr.length) { %>
+    <%_ } _%>
+    <%_ if (attr.javaType === 'String' && attr.length) { _%>
     @Size(max = <%= attr.length %>, message = "<%= attr.name %> must be less than <%= attr.length %> characters")
-    <% } %>
+    <%_ } _%>
     private <%= attr.javaType %> <%= attr.name %>;
-
-<% }); %>
+<%_ }); _%>
 }

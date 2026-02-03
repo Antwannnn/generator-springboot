@@ -1,7 +1,3 @@
-package <%= packageName %>.enums;
+package <%= packageName_%>.enums;
 
-public enum <%= enumName %> {
-<% enumValues.forEach(function(value, index) { %>
-    <%= value %><%= index < enumValues.length - 1 ? ',' : '' %>
-<% }); %>
-}
+public enum <%= enumName_%> { <% enumValues.forEach(function(value, index) { %> <%= value_%><%= index < enumValues.length - 1 ? ',' : ''%><% });%> }

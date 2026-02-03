@@ -10,8 +10,7 @@ import java.math.BigDecimal;
 
 @Data
 public class <%= entityName %>Response {
-
-<% entity.attributes.forEach(function(attr) { %>
+<% entity.attributes.forEach(function(attr) { _%>
     private <%= attr.javaType %> <%= attr.name %>;
 <% }); %>
 }

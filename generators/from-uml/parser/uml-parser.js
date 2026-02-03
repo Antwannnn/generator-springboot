@@ -1,5 +1,6 @@
 "use strict";
 const _ = require('lodash');
+const { off } = require('process');
 
 class UMLParser {
   async parseFile(umlContent) {
@@ -39,7 +40,6 @@ class UMLParser {
         continue;
       }
 
-      // Détecter la déclaration d'enum
       const enumMatch = line.match(/^\s*enum\s+(\w+)\s*\{?/);
       if (enumMatch) {
         currentEnum = {
@@ -52,7 +52,6 @@ class UMLParser {
         continue;
       }
 
-      // Détecter la déclaration de classe
       const classMatch = line.match(/^\s*class\s+(\w+)(?:\s+<<(\w+)>>)?\s*\{?/);
       if (classMatch) {
         currentClass = {
@@ -66,7 +65,6 @@ class UMLParser {
         continue;
       }
 
-      // Fin de classe ou enum
       if (line === '}') {
         if (inClass && currentClass) {
           entities.push(currentClass);
@@ -82,18 +80,15 @@ class UMLParser {
         continue;
       }
 
-      // Parser les valeurs d'enum
       if (inEnum && currentEnum && line) {
-        // Supprimer les virgules et espaces
         const enumValue = line.replace(/,\s*$/, '').trim();
-        if (enumValue && !enumValue.includes('(')) { // Ignorer les constructeurs
+        if (enumValue && !enumValue.includes('(')) { 
           currentEnum.values.push(enumValue);
           console.log('Valeur enum trouvée:', enumValue);
         }
         continue;
       }
 
-      // Parser les relations avec cardinalité
       const relationMatch = line.match(/(\w+)\s+"([^"]+)"\s*(<?-{1,2}>?|\*-{1,2}\*?|o-{1,2}o?)\s+"([^"]+)"\s*(\w+)(?:\s*:\s*(.+))?/);
       if (relationMatch) {
         const [, sourceEntity, sourceCardinality, relType, targetCardinality, targetEntity, label] = relationMatch;
@@ -104,17 +99,15 @@ class UMLParser {
           target: targetEntity,
           targetCardinality: targetCardinality.trim(),
           relationType: relType,
-          label: label ? label.trim() : null
+          label: label ? label.trim() : null,
         });
         console.log('Relation trouvée:', sourceEntity, `"${sourceCardinality}"`, relType, `"${targetCardinality}"`, targetEntity, label ? `: ${label}` : '');
         continue;
       }
 
-      // Parser les attributs dans la classe
       if (inClass && currentClass && line) {
         let attrMatch = line.match(/^([+\-#~])?\s*(\w+)\s*:\s*(\w+)(?:\s+<<([^>]+)>>)?(?:\s+\{([^}]+)\})?/);
         
-        // On récupère toutes les infos importantes sur le champ
         if (!attrMatch) {
           attrMatch = line.match(/^([+\-#~])?\s*(\w+)\s+(\w+)(?:\s+<<([^>]+)>>)?(?:\s+\{([^}]+)\})?/);
           if (attrMatch) {
@@ -154,7 +147,6 @@ class UMLParser {
       return { entities, enums };
     }
 
-    // Transformer les enums
     if (enumList && Array.isArray(enumList)) {
       enumList.forEach(enumItem => {
         const enumModel = {
@@ -166,7 +158,6 @@ class UMLParser {
       });
     }
 
-    // On crée les entités
     const entityMap = new Map();
     classEntities.forEach(item => {
       console.log('Traitement de l\'élément:', item.type, item.name);
@@ -184,30 +175,31 @@ class UMLParser {
         console.log(`Entité créée: ${entity.name} avec ${entity.attributes.length} attribut(s)`);
       }
     });
-
-    // On doit créer les relations en se basant sur la cardinalité
+    
     if (relationships && Array.isArray(relationships)) {
       relationships.forEach(rel => {
         const sourceEntity = entityMap.get(rel.source);
         const targetEntity = entityMap.get(rel.target);
         
         if (sourceEntity && targetEntity) {
-          // Determine la relation selon la cardinalité
           const sourceRelType = this.determineRelationTypeFromCardinality(rel.sourceCardinality, rel.targetCardinality);
           const targetRelType = this.determineRelationTypeFromCardinality(rel.targetCardinality, rel.sourceCardinality);
-          
-          const sourceRelation = {
-            type: sourceRelType,
-            target: rel.target,
-            fieldName: rel.label ? _.camelCase(rel.label) : this.pluralizeIfNeeded(_.camelCase(rel.target), sourceRelType),
-            mappedBy: sourceRelType === 'OneToMany' ? _.camelCase(rel.source) : null,
-            fetchType: 'LAZY',
-            cascade: this.inferCascade(sourceRelType)
-          };
-          sourceEntity.relationships.push(sourceRelation);
-          console.log(`Relation ajoutée: ${sourceEntity.name}.${sourceRelation.fieldName} -> ${targetEntity.name} (@${sourceRelation.type})`);
-          
-          if (targetRelType !== 'None') {
+
+          if (sourceRelType !== 'None' && rel.relationType !== '<--') {
+
+            const sourceRelation = {
+              type: sourceRelType,
+              target: rel.target,
+              fieldName: rel.label ? _.camelCase(rel.label) : this.pluralizeIfNeeded(_.camelCase(rel.target), sourceRelType),
+              mappedBy: sourceRelType === 'OneToMany' ? _.camelCase(rel.source) : null,
+              fetchType: 'LAZY',
+              cascade: this.inferCascade(sourceRelType)
+            };
+            sourceEntity.relationships.push(sourceRelation);
+            console.log(`Relation ajoutée: ${sourceEntity.name}.${sourceRelation.fieldName} -> ${targetEntity.name} (@${sourceRelation.type})`);
+          }
+
+          if (targetRelType !== 'None' && rel.relationType !== '-->') {
             const targetRelation = {
               type: targetRelType,
               target: rel.source,
@@ -227,9 +219,10 @@ class UMLParser {
   }
 
   determineRelationTypeFromCardinality(sourceCard, targetCard) {
+
     const isSourceMany = sourceCard.includes('*') || sourceCard.includes('..');
     const isTargetMany = targetCard.includes('*') || targetCard.includes('..');
-    
+  
     if (!isSourceMany && !isTargetMany) {
       return 'OneToOne';
     } else if (!isSourceMany && isTargetMany) {
@@ -295,7 +288,6 @@ class UMLParser {
   }
 
   mapToJavaType(type, enums) {
-    // Vérifier si c'est un enum défini
     if (this.isEnumType(type, enums)) {
       return type;
     }
@@ -306,6 +298,7 @@ class UMLParser {
       'integer': 'Integer',
       'long': 'Long',
       'boolean': 'Boolean',
+      'bool': 'Boolean',
       'date': 'LocalDate',
       'localdate': 'LocalDate',
       'datetime': 'LocalDateTime',
@@ -314,6 +307,7 @@ class UMLParser {
       'instant': 'Instant',
       'decimal': 'BigDecimal',
       'bigdecimal': 'BigDecimal',
+      'bigint': 'BigInteger',
       'double': 'Double',
       'float': 'Float'
     };

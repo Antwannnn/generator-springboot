@@ -21,6 +21,12 @@ module.exports = class extends BaseGenerator {
     this.option('skip-build', {
       type: Boolean,
       desc: "Ignorer la vérification de build après la génération",
+      default: false
+    });
+
+    this.option('tests', {
+      type: Boolean,
+      desc: "Ne pas générer de tests",
       default: true
     });
   }
@@ -37,10 +43,6 @@ module.exports = class extends BaseGenerator {
       this.log.error('Aucune configuration de projet Spring Boot trouvée. Veuillez exécuter le générateur principal d\'abord.');
       process.exit(1);
     }
-    
-    this.log(`Package utilisé: ${this.configOptions.packageName}`);
-    this.log(`Type de base de données: ${this.configOptions.databaseType}`);
-    this.log(`Outil de migration: ${this.configOptions.dbMigrationTool}`);
   }
 
   async _parseUML() {
@@ -88,7 +90,6 @@ module.exports = class extends BaseGenerator {
   }
 
   writing() {
-    // Générer les enums d'abord
     if (this.enums && this.enums.length > 0) {
       this.enums.forEach(enumItem => {
         this.log(`Génération de l'enum: ${enumItem.name}`);
@@ -122,6 +123,7 @@ module.exports = class extends BaseGenerator {
   }
 
   _generateAppCode(configOptions) {
+      
     const mainJavaTemplates = [
       {src: 'entities/Entity.java', dest: 'entities/'+configOptions.entityName+'.java'},
       {src: 'mapper/Mapper.java', dest: 'mapper/'+configOptions.entityName+'Mapper.java'},
@@ -134,13 +136,15 @@ module.exports = class extends BaseGenerator {
       {src: 'web/controllers/Controller.java', dest: 'web/controllers/'+configOptions.entityName+'Controller.java'},
     ];
     this.generateMainJavaCode(configOptions, mainJavaTemplates);
-
-    const testJavaTemplates = [
-      {src: 'web/controllers/ControllerTest.java', dest: 'web/controllers/'+configOptions.entityName+'ControllerTest.java'},
-      {src: 'web/controllers/ControllerIT.java', dest: 'web/controllers/'+configOptions.entityName+'ControllerIT.java'},
-      {src: 'services/ServiceTest.java', dest: 'services/'+configOptions.entityName+'ServiceTest.java'},
-    ];
-    this.generateTestJavaCode(configOptions, testJavaTemplates);
+    console.log('Options tests:', this.options.tests);
+    if (this.options.tests) {
+      const testJavaTemplates = [
+        {src: 'web/controllers/ControllerTest.java', dest: 'web/controllers/'+configOptions.entityName+'ControllerTest.java'},
+        {src: 'web/controllers/ControllerIT.java', dest: 'web/controllers/'+configOptions.entityName+'ControllerIT.java'},
+        {src: 'services/ServiceTest.java', dest: 'services/'+configOptions.entityName+'ServiceTest.java'},
+      ];
+      this.generateTestJavaCode(configOptions, testJavaTemplates);
+    }
   }
 
   _generateDbMigrationConfig(configOptions) {
