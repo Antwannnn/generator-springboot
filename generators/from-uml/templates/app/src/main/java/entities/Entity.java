@@ -47,9 +47,9 @@ public class <%= entityName_%> {
 <%_});_%>
 <%_if (entity.relationships && entity.relationships.length > 0) {_%>
 <%entity.relationships.forEach(function(rel) {%>
-    @<%= rel.type %><%if (rel.mappedBy) {%>(mappedBy = "<%= rel.mappedBy_%>", fetch = FetchType.<%= rel.fetchType %>)<%} else if (rel.type === 'ManyToOne' || rel.type === 'OneToOne') {%>
-    @JoinColumn(name = "<%= _.snakeCase(rel.fieldName)_%>_id")<%}%>
-    private <%- (rel.type === 'OneToMany' || rel.type === 'ManyToMany') ? 'List<' + rel.target + '>' : rel.target %> <%= rel.fieldName %>;
+    @<%= rel.type %><%if (rel.mappedBy) {%>(mappedBy = "<%= rel.mappedBy %>", fetch = FetchType.<%= rel.fetchType %>)<%} else if (rel.type === 'ManyToOne' || rel.type === 'OneToOne') {%>
+    @JoinColumn(name = "<%= _.snakeCase(rel.fieldName) %>_id")<%}%>
+    private <%- (rel.type === 'OneToMany' || rel.type === 'ManyToMany') ? 'List<' + rel.target + '>' : rel.target %> <%= rel.fieldName %><% if (rel.type === 'OneToMany' || rel.type === 'ManyToMany') { %> = new ArrayList<>()<% } %>;
 <%_});_%>
 <%_}_%>
 }

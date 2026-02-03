@@ -182,35 +182,65 @@ class UMLParser {
         const targetEntity = entityMap.get(rel.target);
         
         if (sourceEntity && targetEntity) {
-          const sourceRelType = this.determineRelationTypeFromCardinality(rel.sourceCardinality, rel.targetCardinality);
-          const targetRelType = this.determineRelationTypeFromCardinality(rel.targetCardinality, rel.sourceCardinality);
-
+          const sourceRelType = this.determineRelationTypeFromCardinality(
+            rel.sourceCardinality,
+            rel.targetCardinality
+          );
+          const targetRelType = this.determineRelationTypeFromCardinality(
+            rel.targetCardinality,
+            rel.sourceCardinality
+          );
           if (sourceRelType !== 'None' && rel.relationType !== '<--') {
-
+            const isCollection = sourceRelType === 'OneToMany' || sourceRelType === 'ManyToMany';
             const sourceRelation = {
               type: sourceRelType,
               target: rel.target,
-              fieldName: rel.label ? _.camelCase(rel.label) : this.pluralizeIfNeeded(_.camelCase(rel.target), sourceRelType),
-              mappedBy: sourceRelType === 'OneToMany' ? _.camelCase(rel.source) : null,
+              fieldName: rel.label
+                ? _.camelCase(rel.label)
+                : isCollection
+                ? this.pluralizeIfNeeded(_.camelCase(rel.target), sourceRelType)
+                : _.camelCase(rel.target),
+              mappedBy:
+                isCollection && rel.relationType === 'bidirectional'
+                  ? _.camelCase(rel.source) 
+                  : null,
               fetchType: 'LAZY',
-              cascade: this.inferCascade(sourceRelType)
+              cascade: this.inferCascade(sourceRelType),
             };
             sourceEntity.relationships.push(sourceRelation);
-            console.log(`Relation ajoutée: ${sourceEntity.name}.${sourceRelation.fieldName} -> ${targetEntity.name} (@${sourceRelation.type})`);
+            console.log(
+              `Relation ajoutée: ${sourceEntity.name}.${sourceRelation.fieldName} -> ${targetEntity.name} (@${sourceRelation.type})`
+            );
+          }
+          const needsFK = rel.targetCardinality.includes('*');
+          if (needsFK && !targetEntity.relationships.some(r => r.type === 'ManyToOne' && r.target === sourceEntity.name)) {
+            targetEntity.relationships.push({
+              type: 'ManyToOne',
+              target: sourceEntity.name,
+              fieldName: _.camelCase(sourceEntity.name),
+              mappedBy: null,
+              fetchType: 'LAZY',
+              cascade: []
+            });
           }
 
           if (targetRelType !== 'None' && rel.relationType !== '-->') {
+            const isCollection = targetRelType === 'OneToMany' || targetRelType === 'ManyToMany';
             const targetRelation = {
               type: targetRelType,
-              target: rel.source,
-              fieldName: _.camelCase(rel.source),
-              mappedBy: null, 
+              target: sourceEntity.name,
+              fieldName: isCollection
+                ? this.pluralizeIfNeeded(_.camelCase(sourceEntity.name), targetRelType)
+                : _.camelCase(sourceEntity.name),
+              mappedBy: isCollection && rel.relationType === 'bidirectional'
+                ? _.camelCase(rel.target)
+                : null,
               fetchType: 'LAZY',
-              cascade: []
+              cascade: this.inferCascade(targetRelType),
             };
             targetEntity.relationships.push(targetRelation);
-            console.log(`Relation inverse ajoutée: ${targetEntity.name}.${targetRelation.fieldName} -> ${sourceEntity.name} (@${targetRelation.type})`);
           }
+
         }
       });
     }
@@ -219,10 +249,9 @@ class UMLParser {
   }
 
   determineRelationTypeFromCardinality(sourceCard, targetCard) {
-
     const isSourceMany = sourceCard.includes('*') || sourceCard.includes('..');
     const isTargetMany = targetCard.includes('*') || targetCard.includes('..');
-  
+
     if (!isSourceMany && !isTargetMany) {
       return 'OneToOne';
     } else if (!isSourceMany && isTargetMany) {
