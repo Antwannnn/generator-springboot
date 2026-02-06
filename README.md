@@ -125,9 +125,9 @@ $ yo springboot:from-uml ./chemin/vers/votre/diagramme.uml
 Ce sous-générateur générera suite à cela :
 
 * Une entité JPA + ses attributs dans la bonne structure de données
-* Les relations entre entitées (in progress)
-* L'application de la (OneToMany, ManyToOne, ManyToMany, OneToOne) (in progress)
-* Les enums si il y'en a (in progress)
+* Les relations entre entitées
+* L'application de la cardinalité(OneToMany, ManyToOne, ManyToMany, OneToOne)
+* Les enums
 * Un repository Spring Data JPA
 * Le service associé à l'entité
 * Le controller REST associé à l'entité avec son CRUD
