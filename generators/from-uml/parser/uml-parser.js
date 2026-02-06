@@ -176,78 +176,42 @@ class UMLParser {
       }
     });
     
-    if (relationships && Array.isArray(relationships)) {
-      relationships.forEach(rel => {
-        const sourceEntity = entityMap.get(rel.source);
-        const targetEntity = entityMap.get(rel.target);
-        
-        if (sourceEntity && targetEntity) {
-          const sourceRelType = this.determineRelationTypeFromCardinality(
-            rel.sourceCardinality,
-            rel.targetCardinality
-          );
-          const targetRelType = this.determineRelationTypeFromCardinality(
-            rel.targetCardinality,
-            rel.sourceCardinality
-          );
-          if (sourceRelType !== 'None' && rel.relationType !== '<--') {
-            const isCollection = sourceRelType === 'OneToMany' || sourceRelType === 'ManyToMany';
-            const sourceRelation = {
-              type: sourceRelType,
-              target: rel.target,
-              fieldName: rel.label
-                ? _.camelCase(rel.label)
-                : isCollection
-                ? this.pluralizeIfNeeded(_.camelCase(rel.target), sourceRelType)
-                : _.camelCase(rel.target),
-              mappedBy:
-                isCollection && rel.relationType === 'bidirectional'
-                  ? _.camelCase(rel.source) 
-                  : null,
-              fetchType: 'LAZY',
-              cascade: this.inferCascade(sourceRelType),
-            };
-            sourceEntity.relationships.push(sourceRelation);
-            console.log(
-              `Relation ajoutée: ${sourceEntity.name}.${sourceRelation.fieldName} -> ${targetEntity.name} (@${sourceRelation.type})`
+      if (relationships && Array.isArray(relationships)) {
+        relationships.forEach(rel => {
+          const sourceEntity = entityMap.get(rel.source);
+          const targetEntity = entityMap.get(rel.target);
+          
+          if (sourceEntity && targetEntity) {
+            console.log(`\nTraitement relation: ${rel.source} "${rel.sourceCardinality}" ${rel.relationType} "${rel.targetCardinality}" ${rel.target}`);
+            
+            const relationType = this.determineRelationTypeFromCardinality(
+              rel.sourceCardinality,
+              rel.targetCardinality
+            );
+            
+            const direction = this.determineRelationDirection(rel.relationType);
+            console.log(`Type de relation: ${relationType}, Direction: ${direction}`);
+            
+            this.createRelationships(
+              sourceEntity,
+              targetEntity,
+              relationType,
+              direction,
+              rel
             );
           }
-          const needsFK = rel.targetCardinality.includes('*');
-          if (needsFK && !targetEntity.relationships.some(r => r.type === 'ManyToOne' && r.target === sourceEntity.name)) {
-            targetEntity.relationships.push({
-              type: 'ManyToOne',
-              target: sourceEntity.name,
-              fieldName: _.camelCase(sourceEntity.name),
-              mappedBy: null,
-              fetchType: 'LAZY',
-              cascade: []
-            });
-          }
-
-          if (targetRelType !== 'None' && rel.relationType !== '-->') {
-            const isCollection = targetRelType === 'OneToMany' || targetRelType === 'ManyToMany';
-            const targetRelation = {
-              type: targetRelType,
-              target: sourceEntity.name,
-              fieldName: isCollection
-                ? this.pluralizeIfNeeded(_.camelCase(sourceEntity.name), targetRelType)
-                : _.camelCase(sourceEntity.name),
-              mappedBy: isCollection && rel.relationType === 'bidirectional'
-                ? _.camelCase(rel.target)
-                : null,
-              fetchType: 'LAZY',
-              cascade: this.inferCascade(targetRelType),
-            };
-            targetEntity.relationships.push(targetRelation);
-          }
-
-        }
-      });
-    }
+        });
+      }
 
     return { entities, enums };
   }
 
+    /**
+   * Détermine le type de relation basé sur les cardinalités
+   * @param {string} sourceCard - Cardinalité source (ex: "1", "0..1", "*", "1..*")
+   * @param {string} targetCard - Cardinalité cible
+   * @returns {string} Type de relation JPA
+   */
   determineRelationTypeFromCardinality(sourceCard, targetCard) {
     const isSourceMany = sourceCard.includes('*') || sourceCard.includes('..');
     const isTargetMany = targetCard.includes('*') || targetCard.includes('..');
@@ -263,6 +227,197 @@ class UMLParser {
     }
   }
 
+  /**
+   * Détermine la direction de la relation basée sur le type de flèche
+   * @param {string} arrowType - Type de flèche UML
+   * @returns {string} Direction: 'unidirectional', 'bidirectional', 'source-to-target', 'target-to-source'
+   */
+  determineRelationDirection(arrowType) {
+    // --> : unidirectionnelle de source vers target
+    if (arrowType === '-->' || arrowType === '->' || arrowType.endsWith('>') && !arrowType.startsWith('<')) {
+      return 'source-to-target';
+    }
+    // <-- : unidirectionnelle de target vers source
+    if (arrowType === '<--' || arrowType === '<-' || arrowType.startsWith('<') && !arrowType.endsWith('>')) {
+      return 'target-to-source';
+    }
+    // <--> ou -- : bidirectionnelle
+    if (arrowType.includes('<') && arrowType.includes('>')) {
+      return 'bidirectional';
+    }
+    // Par défaut, considérer comme bidirectionnelle pour les associations simples
+    return 'bidirectional';
+  }
+
+  /**
+   * Crée les relations entre entités selon le type et la direction
+   */
+  createRelationships(sourceEntity, targetEntity, relationType, direction, rel) {
+    const label = rel.label ? _.camelCase(rel.label) : null;
+
+    switch (relationType) {
+      case 'OneToOne':
+        this.createOneToOneRelation(sourceEntity, targetEntity, direction, label);
+        break;
+      case 'OneToMany':
+        this.createOneToManyRelation(sourceEntity, targetEntity, direction, label);
+        break;
+      case 'ManyToOne':
+        this.createManyToOneRelation(sourceEntity, targetEntity, direction, label);
+        break;
+      case 'ManyToMany':
+        this.createManyToManyRelation(sourceEntity, targetEntity, direction, label);
+        break;
+    }
+  }
+
+  /**
+   * Crée une relation OneToOne
+   */
+  createOneToOneRelation(sourceEntity, targetEntity, direction, label) {
+    if (direction === 'source-to-target' || direction === 'bidirectional') {
+      const fieldName = label || _.camelCase(targetEntity.name);
+      sourceEntity.relationships.push({
+        type: 'OneToOne',
+        target: targetEntity.name,
+        fieldName: fieldName,
+        mappedBy: null,
+        fetchType: 'LAZY',
+        cascade: ['ALL'],
+        optional: true
+      });
+      console.log(`  -> ${sourceEntity.name}.${fieldName} (@OneToOne)`);
+    }
+
+    if (direction === 'target-to-source' || direction === 'bidirectional') {
+      const fieldName = _.camelCase(sourceEntity.name);
+      const mappedBy = direction === 'bidirectional' ? (label || _.camelCase(targetEntity.name)) : null;
+      targetEntity.relationships.push({
+        type: 'OneToOne',
+        target: sourceEntity.name,
+        fieldName: fieldName,
+        mappedBy: mappedBy,
+        fetchType: 'LAZY',
+        cascade: mappedBy ? [] : ['ALL'],
+        optional: true
+      });
+      console.log(`  -> ${targetEntity.name}.${fieldName} (@OneToOne${mappedBy ? `, mappedBy="${mappedBy}"` : ''})`);
+    }
+  }
+
+  /**
+   * Crée une relation OneToMany
+   * Source (1) -> Target (*)
+   */
+  createOneToManyRelation(sourceEntity, targetEntity, direction, label) {
+    if (direction === 'source-to-target' || direction === 'bidirectional') {
+      const fieldName = label || this.pluralizeIfNeeded(_.camelCase(targetEntity.name), 'OneToMany');
+      const mappedBy = _.camelCase(sourceEntity.name);
+      
+      sourceEntity.relationships.push({
+        type: 'OneToMany',
+        target: targetEntity.name,
+        fieldName: fieldName,
+        mappedBy: mappedBy,
+        fetchType: 'LAZY',
+        cascade: ['ALL'],
+        orphanRemoval: true
+      });
+      console.log(`  -> ${sourceEntity.name}.${fieldName} (@OneToMany, mappedBy="${mappedBy}")`);
+
+      // Ajouter automatiquement le ManyToOne côté target
+      if (!targetEntity.relationships.some(r => r.type === 'ManyToOne' && r.target === sourceEntity.name)) {
+        targetEntity.relationships.push({
+          type: 'ManyToOne',
+          target: sourceEntity.name,
+          fieldName: mappedBy,
+          mappedBy: null,
+          fetchType: 'LAZY',
+          cascade: [],
+          optional: false
+        });
+        console.log(`  -> ${targetEntity.name}.${mappedBy} (@ManyToOne) [auto-généré]`);
+      }
+    }
+
+    if (direction === 'target-to-source') {
+      // Dans ce cas, c'est plutôt un ManyToOne de target vers source
+      const fieldName = _.camelCase(sourceEntity.name);
+      targetEntity.relationships.push({
+        type: 'ManyToOne',
+        target: sourceEntity.name,
+        fieldName: fieldName,
+        mappedBy: null,
+        fetchType: 'LAZY',
+        cascade: [],
+        optional: false
+      });
+      console.log(`  -> ${targetEntity.name}.${fieldName} (@ManyToOne)`);
+    }
+  }
+
+  createManyToOneRelation(sourceEntity, targetEntity, direction, label) {
+    if (direction === 'source-to-target' || direction === 'bidirectional') {
+      const fieldName = label || _.camelCase(targetEntity.name);
+      sourceEntity.relationships.push({
+        type: 'ManyToOne',
+        target: targetEntity.name,
+        fieldName: fieldName,
+        mappedBy: null,
+        fetchType: 'LAZY',
+        cascade: [],
+        optional: false
+      });
+      console.log(`  -> ${sourceEntity.name}.${fieldName} (@ManyToOne)`);
+    }
+
+    if (direction === 'target-to-source' || direction === 'bidirectional') {
+      const fieldName = this.pluralizeIfNeeded(_.camelCase(sourceEntity.name), 'OneToMany');
+      const mappedBy = label || _.camelCase(targetEntity.name);
+      
+      targetEntity.relationships.push({
+        type: 'OneToMany',
+        target: sourceEntity.name,
+        fieldName: fieldName,
+        mappedBy: mappedBy,
+        fetchType: 'LAZY',
+        cascade: ['ALL'],
+        orphanRemoval: true
+      });
+      console.log(`  -> ${targetEntity.name}.${fieldName} (@OneToMany, mappedBy="${mappedBy}")`);
+    }
+  }
+
+  createManyToManyRelation(sourceEntity, targetEntity, direction, label) {
+    if (direction === 'source-to-target' || direction === 'bidirectional') {
+      const fieldName = label || this.pluralizeIfNeeded(_.camelCase(targetEntity.name), 'ManyToMany');
+      sourceEntity.relationships.push({
+        type: 'ManyToMany',
+        target: targetEntity.name,
+        fieldName: fieldName,
+        mappedBy: null,
+        fetchType: 'LAZY',
+        cascade: ['PERSIST', 'MERGE']
+      });
+      console.log(`  -> ${sourceEntity.name}.${fieldName} (@ManyToMany)`);
+    }
+
+    if (direction === 'target-to-source' || direction === 'bidirectional') {
+      const fieldName = this.pluralizeIfNeeded(_.camelCase(sourceEntity.name), 'ManyToMany');
+      const mappedBy = direction === 'bidirectional' ? (label || this.pluralizeIfNeeded(_.camelCase(targetEntity.name), 'ManyToMany')) : null;
+      
+      targetEntity.relationships.push({
+        type: 'ManyToMany',
+        target: sourceEntity.name,
+        fieldName: fieldName,
+        mappedBy: mappedBy,
+        fetchType: 'LAZY',
+        cascade: mappedBy ? [] : ['PERSIST', 'MERGE']
+      });
+      console.log(`  -> ${targetEntity.name}.${fieldName} (@ManyToMany${mappedBy ? `, mappedBy="${mappedBy}"` : ''})`);
+    }
+  }
+
   pluralizeIfNeeded(name, relType) {
     if (relType === 'OneToMany' || relType === 'ManyToMany') {
       return name.endsWith('s') ? name : name + 's';
@@ -270,16 +425,12 @@ class UMLParser {
     return name;
   }
 
-  inferMappedBy(rel, sourceEntity, targetEntity, relType) {
-    if (relType === 'OneToMany') {
-      return _.camelCase(sourceEntity.name);
-    }
-    return null;
-  }
-
-  inferCascade(relationType) {
+    inferCascade(relationType) {
     if (relationType === 'OneToMany' || relationType === 'OneToOne') {
       return ['ALL'];
+    }
+    if (relationType === 'ManyToMany') {
+      return ['PERSIST', 'MERGE'];
     }
     return [];
   }

@@ -154,3 +154,166 @@ Les structures de données suivantes sont supportées dans le parsing des diagra
 'double': 'Double',
 'float': 'Float'
 ```
+
+### Bonnes pratiques pour maximiser l'interprétabilité d'un diagramme UML
+Le parsing offert par le générateur ne peut pas être exhaustif au vu de la complexité et du grand nombre des possibilités et de libertés offertes par le langage UML en général. Pour cette raison il y'a pour ce générateur des bonnes pratiques UML à respecter pour maximiser les chances d'obtenir un résultat cohérent avec l'entrée.
+
+Le générateur est sensible aux sauts de ligne, un diagramme UML inline produira un résultat erroné.
+
+Les notes sont ignorées.
+
+#### Début et fin
+
+Un diagramme UML doit commencer par la ligne ```@startuml``` et finir par la ligne ```@enduml```
+
+#### Entitées
+- Les entités doivent être modélisées sous le mot clé "class" suivi du nom de la classe et d'une accolade ouvrante.
+- Chaque attribut déclaré doit suivre le modèle "+" ou "-" pour la visibilité suivi du nom (collés) avec ensuite ":" et le type dont ceux supportés sont listés plus haut.
+
+Exemple
+```uml
+class Person {
+  + id: long
+  + name: string
+  + age: int
+}
+``` 
+
+#### Enums
+- Les déclarations d'enums suivent le même schéma que les classes à savoir le mot clé "enum" suivi du nom de l'enum et d'une accolade ouvrante.
+- Les valeurs de l'enum sont à lister sous la forme de valeurs simples sans types ni visibilité.
+
+Exemple
+```uml
+enum Status {
+  ACTIVE
+  INACTIVE
+  DELETED
+  ARCHIVED
+}
+```
+
+#### Relations
+- Les relations doivent adopter la forme 'S "SC" D "TC" T : N' où :
+  - S = Source
+  - SC = Source Cardinality ("1", "0..*", "1..*" etc...)
+  - D = Direction (-- --> <--)
+  - TC = Target Cardinality (1, 0..*, * 1..* etc...)
+  - T = Target
+  - N = Name (de la relation / attribut associé dans le code)
+
+Exemple
+```uml
+Product "0" --> "1..*" Person
+Product "*" -- "*" Article
+Shop "1" -- "1" Company
+``` 
+
+#### Exemple de diagramme complet
+
+Entrée :
+```uml
+@startuml
+
+class Person {
+  +id : int
+  +name : String
+}
+
+class Company {
+  +id : int
+  +name : String
+  +address : String
+  +foundedYear : int
+  +status : Status
+}
+
+enum Status {
+ PUBLIC
+ PRIVATE
+}
+
+Person "*" -- "1" Company : works_for
+
+@enduml
+```
+
+Sortie(s) :
+
+Classe (entité) "Person" :
+```java
+package fr.infotel.testapp.entities;
+
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import java.util.List;
+import java.util.ArrayList;
+
+@Entity
+@Table(name = "person")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Person{
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "person_id_seq_gen")
+    @SequenceGenerator(name = "person_id_seq_gen", sequenceName = "person_id_seq")
+    private Integer id;
+
+    @Column(name = "name", length = 255)
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "works_for_id")
+    private Company worksFor;
+}
+```
+
+Classe (entité) "Company" :
+```java
+@Entity
+@Table(name = "company")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+public class Company{
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "company_id_seq_gen")
+    @SequenceGenerator(name = "company_id_seq_gen", sequenceName = "company_id_seq")
+    private Integer id;
+
+    @Column(name = "name", length = 255)
+    private String name;
+
+    @Column(name = "address", length = 255)
+    private String address;
+
+    @Column(name = "founded_year")
+    private Integer foundedYear;
+
+    @Column(name = "status")
+    @Enumerated(EnumType.STRING)
+    private Status status;
+
+    @OneToMany(mappedBy = "worksFor", fetch = FetchType.LAZY)
+    private List<Person> persons = new ArrayList<>();
+}
+```
+
+Enum "Status" :
+```java
+public enum Status { 
+  PUBLIC, 
+  PRIVATE 
+}
+```
+
+
+
