@@ -173,9 +173,9 @@ Un diagramme UML doit commencer par la ligne ```@startuml``` et finir par la lig
 Exemple
 ```uml
 class Person {
-  + id: long
-  + name: string
-  + age: int
+  +id: long
+  +name: string
+  +age: int
 }
 ``` 
 
