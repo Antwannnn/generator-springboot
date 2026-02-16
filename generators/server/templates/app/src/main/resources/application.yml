@@ -128,8 +128,8 @@ management:
 app:
   security:
     jwt:
-      secret: ${JWT_SECRET:YS1zdHJpbmctc2VjcmV0LWF0LWxlYXN0LTI1Ni1iaXRzLWxvbmc=}
-      expiration: ${JWT_EXPIRATION:86400000}
+      secret: ${JWT_SECRET:<%= jwtSecret %>}
+      expiration: ${JWT_EXPIRATION:<%= jwtExpiration %>}
 <%_ } _%>
 
 <%_ if (features.includes('elk')) { _%>
@@ -137,3 +137,4 @@ app:
 application:
   logstash-host: localhost
 <%_ } _%>
+ 

@@ -53,4 +53,6 @@ module.exports = {
 
     KEYCLOAK_IMAGE_VERSION: KEYCLOAK_IMAGE_VERSION,
     KEYCLOAK_IMAGE: 'quay.io/keycloak/keycloak:' + KEYCLOAK_IMAGE_VERSION,
+
+    KEY_JWT_SIGNING_SECRET: 'a-256-bit-secret-that-is-very-long-and-secure',
 }

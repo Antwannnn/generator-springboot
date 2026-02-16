@@ -157,6 +157,19 @@ async function prompting() {
             default: ['google']
         },
         {
+            when: (answers) => answers.authenticationTypes.includes('jwt'),
+            type: 'string',
+            name: 'jwtSecret',
+            message: 'JWT Secret (utilisé pour signer les tokens)',
+            default: generateSigningSecret()
+        },
+        { when: (answers) => answers.authenticationTypes.includes('jwt'),
+            type: 'number',
+            name: 'jwtExpiration',
+            message: 'JWT Expiration Time (en millisecondes)',
+            default: 86400000
+        },
+        {
             type: 'list',
             name: 'buildTool',
             message: 'Quel outil de build souhaitez-vous utiliser ?',
@@ -174,8 +187,17 @@ async function prompting() {
         }
     ];
 
+    
+
     const answers = await this.prompt(prompts);
     Object.assign(this.configOptions, answers);
     this.configOptions.packageFolder = this.configOptions.packageName.replace(/\./g, '/');
     this.configOptions.features = this.configOptions.features || [];
+}
+
+async function generateSigningSecret() {
+    const crypto = require('crypto');
+    const {promisify} = require('util');
+    const randomBytesAsync = promisify(crypto.randomBytes);
+    return (await randomBytesAsync(32)).toString('base64');
 }
