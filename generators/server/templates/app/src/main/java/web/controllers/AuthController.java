@@ -99,7 +99,7 @@ public class AuthController {
 
         String refreshToken = jwtService.generateRefreshToken(auth.getName());
 
-        ResponseCookie accessCookie = ResponseCookie.from("access_token", accessToken)
+        ResponseCookie accessCookie = ResponseCookie.from(AppConstants.ACCESS_TOKEN_COOKIE_NAME, accessToken)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -107,7 +107,7 @@ public class AuthController {
                 .maxAge(Duration.ofMinutes(15))
                 .build();
 
-        ResponseCookie refreshCookie = ResponseCookie.from("refresh_token", refreshToken)
+        ResponseCookie refreshCookie = ResponseCookie.from(AppConstants.REFRESH_TOKEN_COOKIE_NAME, refreshToken)
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -123,7 +123,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
-        ResponseCookie clearAccessToken = ResponseCookie.from("access_token", "")
+        ResponseCookie clearAccessToken = ResponseCookie.from(AppConstants.ACCESS_TOKEN_COOKIE_NAME, "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -131,7 +131,7 @@ public class AuthController {
                 .maxAge(0)
                 .build();
 
-        ResponseCookie clearRefreshToken = ResponseCookie.from("refresh_token", "")
+        ResponseCookie clearRefreshToken = ResponseCookie.from(AppConstants.REFRESH_TOKEN_COOKIE_NAME, "")
                 .httpOnly(true)
                 .secure(true)
                 .path("/")
@@ -174,7 +174,7 @@ public class AuthController {
         String refreshToken = null;
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
-                if ("refresh_token".equals(cookie.getName())) {
+                if (AppConstants.REFRESH_TOKEN_COOKIE_NAME.equals(cookie.getName())) {
                     refreshToken = cookie.getValue();
                 }
             }
@@ -184,7 +184,7 @@ public class AuthController {
             String username = jwtService.extractUsername(refreshToken);
             String newAccessToken = jwtService.generateAccessToken(username);
 
-            ResponseCookie accessCookie = ResponseCookie.from("access_token", newAccessToken)
+            ResponseCookie accessCookie = ResponseCookie.from(AppConstants.ACCESS_TOKEN_COOKIE_NAME, newAccessToken)
                     .httpOnly(true)
                     .path("/")
                     .sameSite("Strict")

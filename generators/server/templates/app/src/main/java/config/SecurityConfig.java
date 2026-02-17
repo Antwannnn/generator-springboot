@@ -3,12 +3,14 @@ package <%= packageName %>.config;
 <%_ if (authenticationTypes && authenticationTypes.length > 0) { _%>
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import <%= packageName %>.config.logging.SecurityLogFilter;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.http.SessionCreationPolicy;
+<%_ } _%>
 <%_ if (authenticationTypes.includes('jwt')) { _%>
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -84,9 +86,19 @@ public class SecurityConfig {
         <%_ if (authenticationTypes.includes('jwt')) { _%>
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         <%_ } _%>
+        <%_ if (authenticationTypes.length > 0) { _%>
+        http.addFilterAfter(securityLogFilter(), SecurityContextHolderFilter.class);
+        <%_ } _%>
 
         return http.build();
     }
+
+<% if(authenticationTypes.length > 0) { _%>
+    @Bean
+    public SecurityLogFilter securityLogFilter() {
+        return new SecurityLogFilter();
+    }
+<%_ } _%>
 
 <%_ if (authenticationTypes.includes('oauth2-resource')) { _%>
     @Bean
@@ -114,7 +126,6 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
-
     @Bean
     public UserDetailsService userDetailsService() {
         return new CustomUserDetailsService(userRepository);
@@ -124,13 +135,11 @@ public class SecurityConfig {
     public JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint() {
         return new JwtAuthenticationEntryPoint();
     }
-<%_ } _%>
 
-<%_ if (authenticationTypes.includes('jwt')) { _%>
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 <%_ } _%>
+
 }
-<%_ } _%>

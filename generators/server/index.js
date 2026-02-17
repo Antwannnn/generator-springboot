@@ -185,6 +185,8 @@ module.exports = class extends BaseGenerator {
     _generateAppCode(configOptions) {
         const mainJavaTemplates = [
             'Application.java',
+            'config/logging/SecurityLogEntry.java',
+            'config/logging/SecurityLogger.java',
             'config/WebMvcConfig.java',
             'config/SwaggerConfig.java',
             'config/ApplicationProperties.java',
@@ -212,6 +214,7 @@ module.exports = class extends BaseGenerator {
                 mainJavaTemplates.push('model/entity/User.java');
                 mainJavaTemplates.push('repositories/UserRepository.java');
                 mainJavaTemplates.push('config/UserInitializer.java');
+                mainJavaTemplates.push('config/logging/SecurityLogFilter.java');
             }
         }
         this.generateMainJavaCode(configOptions, mainJavaTemplates);
@@ -254,8 +257,8 @@ module.exports = class extends BaseGenerator {
             let vendor = configOptions.databaseType;
             const resTemplates = [
                 {src: 'db/migration/flyway/V1__01_init.sql', dest: 'db/migration/'+ vendor +'/V1__01_init.sql'},
-
             ];
+            
             this.generateFiles(configOptions, resTemplates, 'app/','src/main/resources/');
             const flywayMigrantCounter = {
                 [constants.KEY_FLYWAY_MIGRATION_COUNTER]: 1

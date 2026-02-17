@@ -9,4 +9,6 @@ public final class AppConstants {
     public static final String DEFAULT_PAGE_SIZE = "10";
     public static final String DEFAULT_SORT_BY = "id";
     public static final String DEFAULT_SORT_DIRECTION = "asc";
+    public static final String ACCESS_TOKEN_COOKIE_NAME = "access_token";
+    public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
 }
