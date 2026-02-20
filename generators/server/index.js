@@ -185,8 +185,6 @@ module.exports = class extends BaseGenerator {
     _generateAppCode(configOptions) {
         const mainJavaTemplates = [
             'Application.java',
-            'config/logging/SecurityLogEntry.java',
-            'config/logging/SecurityLogger.java',
             'config/WebMvcConfig.java',
             'config/SwaggerConfig.java',
             'config/ApplicationProperties.java',
@@ -214,9 +212,22 @@ module.exports = class extends BaseGenerator {
                 mainJavaTemplates.push('model/entity/User.java');
                 mainJavaTemplates.push('repositories/UserRepository.java');
                 mainJavaTemplates.push('config/UserInitializer.java');
-                mainJavaTemplates.push('config/logging/SecurityLogFilter.java');
             }
         }
+
+        if (configOptions.loggingTypes && configOptions.loggingTypes.includes('security')) {
+            mainJavaTemplates.push('config/logging/security/SecurityLogFilter.java');
+            mainJavaTemplates.push('config/logging/security/SecurityLogger.java');
+            mainJavaTemplates.push('config/logging/security/SecurityLogEntry.java');
+        }
+
+        if (configOptions.loggingTypes && configOptions.loggingTypes.includes('performance')) {
+            mainJavaTemplates.push('config/logging/performance/PerformanceLogAspect.java');
+            mainJavaTemplates.push('config/logging/performance/PerformanceLogEntry.java');
+            mainJavaTemplates.push('config/logging/performance/PerformanceLogger.java');
+            mainJavaTemplates.push('config/logging/performance/Performance.java');
+        }
+
         this.generateMainJavaCode(configOptions, mainJavaTemplates);
 
         const mainResTemplates = [

@@ -1,4 +1,4 @@
-package <%= packageName %>.config.logging;
+package <%= packageName %>.config.logging.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -8,9 +8,10 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
-
+import org.springframework.stereotype.Component;
 import java.io.IOException;
 
+@Component
 public class SecurityLogFilter extends OncePerRequestFilter {
 
     private SecurityLogger securityLogger;
@@ -25,7 +26,14 @@ public class SecurityLogFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+
+
         long start = System.currentTimeMillis();
+                
+        filterChain.doFilter(request, response);
+
+        long duration = System.currentTimeMillis() - start;
+
         boolean success = false;
         String username = "anonymous";
 
@@ -40,9 +48,6 @@ public class SecurityLogFilter extends OncePerRequestFilter {
                 success = true;
         }
 
-        filterChain.doFilter(request, response);
-
-        long duration = System.currentTimeMillis() - start;
 
         SecurityLogEntry entry = new SecurityLogEntry(
                 username,

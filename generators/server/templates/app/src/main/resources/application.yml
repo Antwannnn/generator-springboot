@@ -133,7 +133,6 @@ app:
 <%_ } _%>
 
 <%_ if (features.includes('elk')) { _%>
-# ELK Configuration
 application:
   logstash-host: localhost
 <%_ } _%>

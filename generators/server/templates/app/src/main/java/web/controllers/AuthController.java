@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import <%= packageName %>.config.security.JwtService;
 import <%= packageName %>.model.request.LoginRequest;
 import org.springframework.http.HttpStatus;
-
+import <%= packageName %>.utils.AppConstants;
 import java.time.Duration;
 import java.util.Map;
 <%_ } _%>

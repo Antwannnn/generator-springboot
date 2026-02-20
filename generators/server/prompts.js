@@ -1,3 +1,5 @@
+const { type } = require('os');
+
 module.exports = {
     prompting
 };
@@ -168,6 +170,21 @@ async function prompting() {
             name: 'jwtExpiration',
             message: 'JWT Expiration Time (en millisecondes)',
             default: 86400000
+        },
+        {
+            type: "checkbox",
+            name: "loggingTypes",
+            message: "Quel type de logging souhaitez-vous ajouter ?",
+            choices: [
+                {
+                    value: 'security',
+                    name: 'Security'
+                },
+                {
+                    value: 'performance',
+                    name: 'Performance'
+                },
+            ]
         },
         {
             type: 'list',

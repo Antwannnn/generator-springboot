@@ -21,13 +21,8 @@
                 <loggerName/>
 
                 <pattern>
-                    <pattern>
-                        {
-                        <!-- we can add some custom fields to be sent with all the log entries.-->
-                        <!--make filtering easier in Logstash-->
-                        "app-name": ${spring.application.name}
-                        }
-                    </pattern>
+                    <pattern>{"app-name": "${appName}"}</pattern>
+                    <pattern>{"type": "app"}</pattern>
                 </pattern>
 
                 <threadName/>
@@ -57,7 +52,55 @@
             <%_ } _%>   
         </root>
     </springProfile>
-    
+
+    <%_ if (loggingTypes.includes('performance')) { _%>
+    <%_ if (features.includes('elk')) { _%>
+    <appender class="net.logstash.logback.appender.LogstashTcpSocketAppender" name="PERFORMANCE_STASH">
+        <destination>${logstashHost}:5000</destination>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <mdc/>
+                <context/>
+                <version/>
+                <logLevel/>
+                <loggerName/>
+                <pattern>
+                    <pattern>{"app-name": "${appName}"}</pattern>
+                    <pattern>{"type": "performance"}</pattern>
+                </pattern>
+                <threadName/>
+                <message/>
+                <logstashMarkers/>
+                <arguments/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+    <%_ } _%>
+
+    <appender name="PERFORMANCE_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/performance.log</file>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/performance-%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%date %-5level [%thread] %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="PERFORMANCE" level="INFO" additivity="false">
+        <appender-ref ref="PERFORMANCE_FILE"/>
+        <%_ if (features.includes('elk')) { _%>
+        <appender-ref ref="PERFORMANCE_STASH"/>
+        <%_ } _%>
+    </logger>
+
+    <%_ } _%>
+
+    <%_ if (loggingTypes.includes('security')) { _%>
     <appender name="SECURITY_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>logs/security.log</file>
 
@@ -71,9 +114,36 @@
         </encoder>
     </appender>
 
+    <appender class="net.logstash.logback.appender.LogstashTcpSocketAppender" name="PERFORMANCE_STASH">
+        <destination>${logstashHost}:5000</destination>
+        <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+            <providers>
+                <mdc/>
+                <context/>
+                <version/>
+                <logLevel/>
+                <loggerName/>
+                <pattern>
+                    <pattern>{"app-name": "${appName}"}</pattern>
+                    <pattern>{"type": "security"}</pattern>
+                </pattern>
+                <threadName/>
+                <message/>
+                <logstashMarkers/>
+                <arguments/>
+                <stackTrace/>
+            </providers>
+        </encoder>
+    </appender>
+
     <logger name="SECURITY" level="INFO" additivity="false">
         <appender-ref ref="SECURITY_FILE"/>
+        <%_ if (features.includes('elk')) { _%>
+        <appender-ref ref="SECURITY_STASH"/>
+        <%_ } _%>
     </logger>
+
+    <%_ } _%>
 
     <logger name="<%= packageName %>" level="DEBUG"/>
     <logger name="org.springframework" level="INFO"/>

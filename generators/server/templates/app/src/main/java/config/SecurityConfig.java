@@ -1,9 +1,13 @@
 package <%= packageName %>.config;
 
+<%_ if (loggingTypes.includes('security')) { _%>
+import <%= packageName %>.config.logging.security.SecurityLogFilter;
+import <%= packageName %>.config.logging.security.SecurityLogger;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
+<%_ } _%>
 <%_ if (authenticationTypes && authenticationTypes.length > 0) { _%>
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import <%= packageName %>.config.logging.SecurityLogFilter;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -37,10 +41,16 @@ public class SecurityConfig {
 <%_ if (authenticationTypes.includes('jwt')) { _%>
     private final UserRepository userRepository;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    <%_ if (loggingTypes.includes('security')) { _%>
+    private final SecurityLogger securityLogger;
+    <%_ } _%>
 
-    public SecurityConfig(UserRepository userRepository, JwtAuthenticationFilter jwtAuthenticationFilter) {
+    public SecurityConfig(UserRepository userRepository, JwtAuthenticationFilter jwtAuthenticationFilter <%_ if (loggingTypes.includes('security')) { _%>, SecurityLogger securityLogger <%_ } _%>) {
         this.userRepository = userRepository;
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+        <%_ if (loggingTypes.includes('security')) { _%>
+        this.securityLogger = securityLogger;
+        <%_ } _%>
     }
 <%_ } _%>
 
@@ -81,22 +91,20 @@ public class SecurityConfig {
 
         http.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint()));
-
         <%_ } _%>
         <%_ if (authenticationTypes.includes('jwt')) { _%>
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         <%_ } _%>
-        <%_ if (authenticationTypes.length > 0) { _%>
-        http.addFilterAfter(securityLogFilter(), SecurityContextHolderFilter.class);
+        <%_ if (loggingTypes.includes('security')) { _%>
+        http.addFilterBefore(securityLogFilter(securityLogger), SecurityContextHolderFilter.class);
         <%_ } _%>
-
         return http.build();
     }
 
-<% if(authenticationTypes.length > 0) { _%>
+<% if(loggingTypes.includes("security")) { _%>
     @Bean
-    public SecurityLogFilter securityLogFilter() {
-        return new SecurityLogFilter();
+    public SecurityLogFilter securityLogFilter(SecurityLogger securityLogger) {
+        return new SecurityLogFilter(securityLogger);
     }
 <%_ } _%>
 
@@ -126,6 +134,7 @@ public class SecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return authProvider;
     }
+
     @Bean
     public UserDetailsService userDetailsService() {
         return new CustomUserDetailsService(userRepository);

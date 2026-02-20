@@ -1,4 +1,4 @@
-package <%= packageName %>.config.logging;
+package <%= packageName %>.config.logging.security;
 
 public record SecurityLogEntry(
         String username,
