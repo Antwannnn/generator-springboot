@@ -7,11 +7,18 @@ create table <%= tableName %> (
     <%_ if (databaseType === 'mariadb') { _%>
     id bigint DEFAULT nextval(`<%= tableName %>_seq`) not null,
     <%_ } _%>
-    <%_ if (databaseType != 'postgresql') { _%>
-    text varchar(1024) not null,
+    <%_ entity.attributes.forEach((attr, index) => { _%>
+    <%_ if (!attr.isId) { _%>
+    <%= _.snakeCase(attr.name) %> <%= getSqlType(attr.type, databaseType) %><%= attr.required ? ' not null' : '' %><%= attr.unique ? ' unique' : '' %>,
     <%_ } _%>
-    <%_ if (databaseType === 'postgresql') { _%>
-    text text not null,
+    <%_ }); _%>
+    <%_ const manyToOneRelations = entity.relationships.filter(rel => rel.type === 'ManyToOne'); _%>
+    <%_ manyToOneRelations.forEach((rel, index) => { _%>
+    <%= _.snakeCase(rel.name) %>_id bigint<%= rel.required ? ' not null' : '' %>,
+    <%_ }); _%>
+    primary key (id)<%_ if (manyToOneRelations.length > 0) { _%>,
+    <%_ manyToOneRelations.forEach((rel, index) => { _%>
+    constraint fk_<%= tableName %>_<%= _.snakeCase(rel.targetEntity) %> foreign key (<%= _.snakeCase(rel.name) %>_id) references <%= _.snakeCase(rel.targetEntity) %>(id)<%= index < manyToOneRelations.length - 1 ? ',' : '' %>
+    <%_ }); _%>
     <%_ } _%>
-    primary key (id)
 );

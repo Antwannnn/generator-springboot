@@ -112,7 +112,8 @@ module.exports = class extends BaseGenerator {
         entity: entity,
         enums: this.enums,
         doesNotSupportDatabaseSequences: this.configOptions.databaseType === 'mysql',
-        _: _ 
+        _: _,
+        getSqlType: this._getSqlType.bind(this)
       };
 
       this.log(`Génération du code pour l'entité: ${entity.name}`);
@@ -207,5 +208,49 @@ module.exports = class extends BaseGenerator {
       this.destinationPath(`src/main/java/${this.configOptions.packageFolder}/enums/${enumItem.name}.java`),
       enumConfig
     );
+  }
+
+  /**
+   * Mappe les types Java vers les types SQL selon la base de données
+   * @param {string} javaType - Type Java (String, Integer, Long, etc.)
+   * @param {string} databaseType - Type de base de données (postgresql, mysql, mariadb, etc.)
+   * @returns {string} Type SQL correspondant
+   */
+  _getSqlType(javaType, databaseType) {
+    // Si c'est un enum, utiliser varchar
+    if (this.enums && this.enums.some(e => e.name === javaType)) {
+      return databaseType === 'postgresql' ? 'varchar(255)' : 'varchar(255)';
+    }
+
+    const typeMap = {
+      'String': databaseType === 'postgresql' ? 'varchar(255)' : 'varchar(255)',
+      'Integer': 'integer',
+      'int': 'integer',
+      'Long': 'bigint',
+      'long': 'bigint',
+      'Boolean': databaseType === 'postgresql' ? 'boolean' : 'tinyint(1)',
+      'boolean': databaseType === 'postgresql' ? 'boolean' : 'tinyint(1)',
+      'LocalDate': 'date',
+      'LocalDateTime': databaseType === 'postgresql' ? 'timestamp' : 'datetime',
+      'LocalTime': 'time',
+      'Instant': databaseType === 'postgresql' ? 'timestamp' : 'datetime',
+      'ZonedDateTime': databaseType === 'postgresql' ? 'timestamp with time zone' : 'datetime',
+      'BigDecimal': 'decimal(19,2)',
+      'Double': databaseType === 'postgresql' ? 'double precision' : 'double',
+      'double': databaseType === 'postgresql' ? 'double precision' : 'double',
+      'Float': databaseType === 'postgresql' ? 'real' : 'float',
+      'float': databaseType === 'postgresql' ? 'real' : 'float',
+      'BigInteger': 'bigint',
+      'Byte': 'tinyint',
+      'byte': 'tinyint',
+      'Short': 'smallint',
+      'short': 'smallint',
+      'UUID': databaseType === 'postgresql' ? 'uuid' : 'varchar(36)',
+      'byte[]': databaseType === 'postgresql' ? 'bytea' : 'blob',
+      'Blob': 'blob',
+      'Clob': 'text'
+    };
+
+    return typeMap[javaType] || 'varchar(255)';
   }
 };

@@ -1,0 +1,92 @@
+@startuml
+
+' Exemple de diagramme UML pour générer des entités Spring Boot avec migrations SQL
+' 
+' Utilisation :
+' yo springboot:from-uml path/to/this/file.puml
+'
+' Ce générateur va créer :
+' - Les entités JPA (Entity.java)
+' - Les repositories
+' - Les services
+' - Les controllers REST
+' - Les DTOs (Request/Response)
+' - Les migrations de base de données (Flyway ou Liquibase)
+
+enum UserRole {
+  ADMIN
+  USER
+  GUEST
+}
+
+enum OrderStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  CANCELLED
+}
+
+class User {
+  + id: Long <<id>>
+  + username: String {required, unique}
+  + email: String {required, max=255}
+  + password: String {required}
+  + firstName: String
+  + lastName: String
+  + dateOfBirth: LocalDate
+  + active: Boolean {required}
+  + role: UserRole {required}
+  + createdAt: LocalDateTime
+}
+
+class Product {
+  + id: Long <<id>>
+  + name: String {required, max=200}
+  + description: String
+  + price: BigDecimal {required}
+  + stock: Integer {required}
+  + available: Boolean
+  + createdAt: LocalDateTime
+}
+
+class Order {
+  + id: Long <<id>>
+  + orderNumber: String {required, unique}
+  + orderDate: LocalDateTime {required}
+  + totalAmount: BigDecimal {required}
+  + status: OrderStatus {required}
+  + shippingAddress: String
+  + notes: String
+}
+
+class OrderItem {
+  + id: Long <<id>>
+  + quantity: Integer {required}
+  + unitPrice: BigDecimal {required}
+  + discount: Double
+}
+
+' Relations
+' Syntaxe: <Source> "<cardinalité source>" <direction> "<cardinalité cible>" <Target> : label
+
+' Un utilisateur peut avoir plusieurs commandes
+User "1" --> "0..*" Order : places
+
+' Une commande a plusieurs items
+Order "1" --> "1..*" OrderItem : contains
+
+' Un item fait référence à un produit
+Product "1" <-- "0..*" OrderItem : references
+
+' Notes sur les relations :
+' - "1" --> "0..*" génère @OneToMany sur User et @ManyToOne sur Order
+' - La flèche "-->" indique une relation unidirectionnelle (de source vers target)
+' - Le label (ex: "places") devient le nom de la propriété dans l'entité
+'
+' Contraintes sur les attributs :
+' - {required} : NOT NULL en SQL, @NotNull en Java
+' - {unique} : UNIQUE en SQL, @Column(unique=true) en Java
+' - {max=N} : longueur max pour String
+' - <<id>> : marque le champ comme clé primaire (optionnel, "id" est auto-détecté)
+
+@enduml

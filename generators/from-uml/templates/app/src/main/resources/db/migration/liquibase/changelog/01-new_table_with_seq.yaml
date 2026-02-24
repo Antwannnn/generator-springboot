@@ -26,8 +26,34 @@ databaseChangeLog:
                   constraints:
                     primaryKey: true
                     nullable: false
+              <%_ entity.attributes.forEach((attr, index) => { _%>
+              <%_ if (!attr.isId) { _%>
               - column:
-                  name: text
-                  type: ${string.type}
+                  name: <%= _.snakeCase(attr.name) %>
+                  type: <%= getSqlType(attr.type, databaseType) %>
                   constraints:
-                    nullable: false
+                    nullable: <%= !attr.required %>
+                    <%_ if (attr.unique) { _%>
+                    unique: true
+                    <%_ } _%>
+              <%_ } _%>
+              <%_ }); _%>
+              <%_ const manyToOneRelations = entity.relationships.filter(rel => rel.type === 'ManyToOne'); _%>
+              <%_ manyToOneRelations.forEach((rel, index) => { _%>
+              - column:
+                  name: <%= _.snakeCase(rel.name) %>_id
+                  type: bigint
+                  constraints:
+                    nullable: <%= !rel.required %>
+              <%_ }); _%>
+        <%_ if (manyToOneRelations.length > 0) { _%>
+        <%_ manyToOneRelations.forEach((rel, index) => { _%>
+        - addForeignKeyConstraint:
+            baseTableName: <%= tableName %>
+            baseColumnNames: <%= _.snakeCase(rel.name) %>_id
+            constraintName: fk_<%= tableName %>_<%= _.snakeCase(rel.targetEntity) %>
+            referencedTableName: <%= _.snakeCase(rel.targetEntity) %>
+            referencedColumnNames: id
+        <%_ }); _%>
+        <%_ } _%>
+
