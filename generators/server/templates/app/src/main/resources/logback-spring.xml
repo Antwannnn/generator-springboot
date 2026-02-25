@@ -114,7 +114,7 @@
         </encoder>
     </appender>
 
-    <appender class="net.logstash.logback.appender.LogstashTcpSocketAppender" name="PERFORMANCE_STASH">
+    <appender class="net.logstash.logback.appender.LogstashTcpSocketAppender" name="SECURITY_STASH">
         <destination>${logstashHost}:5000</destination>
         <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
             <providers>

@@ -210,14 +210,7 @@ module.exports = class extends BaseGenerator {
     );
   }
 
-  /**
-   * Mappe les types Java vers les types SQL selon la base de données
-   * @param {string} javaType - Type Java (String, Integer, Long, etc.)
-   * @param {string} databaseType - Type de base de données (postgresql, mysql, mariadb, etc.)
-   * @returns {string} Type SQL correspondant
-   */
   _getSqlType(javaType, databaseType) {
-    // Si c'est un enum, utiliser varchar
     if (this.enums && this.enums.some(e => e.name === javaType)) {
       return databaseType === 'postgresql' ? 'varchar(255)' : 'varchar(255)';
     }

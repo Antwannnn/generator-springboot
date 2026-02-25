@@ -96,7 +96,7 @@ public class SecurityConfig {
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         <%_ } _%>
         <%_ if (loggingTypes.includes('security')) { _%>
-        http.addFilterBefore(securityLogFilter(securityLogger), SecurityContextHolderFilter.class);
+        http.addFilterAfter(securityLogFilter(securityLogger), SecurityContextHolderFilter.class);
         <%_ } _%>
         return http.build();
     }
